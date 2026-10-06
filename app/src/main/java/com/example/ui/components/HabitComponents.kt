@@ -245,12 +245,12 @@ fun HabitDetailCard(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // 30 days grid (5 rows x 6 columns or 3 rows x 10 cols)
-            val last30Days = (29 downTo 0).map { today.minusDays(it.toLong()) }
+            // 28 days calendar grid (4 weeks x 7 days) for clean mobile layout without horizontal overflow
+            val last28Days = (27 downTo 0).map { today.minusDays(it.toLong()) }
             val completedDatesSet = logs.filter { it.isCompleted }.map { it.date }.toSet()
 
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                last30Days.chunked(10).forEach { rowDays ->
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                last28Days.chunked(7).forEach { rowDays ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -263,13 +263,13 @@ fun HabitDetailCard(
 
                             Box(
                                 modifier = Modifier
-                                    .size(26.dp)
+                                    .size(32.dp)
                                     .clip(CircleShape)
                                     .background(
                                         if (isDone) habitColor else MaterialTheme.colorScheme.surfaceVariant
                                     )
                                     .then(
-                                        if (isToday) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                        if (isToday) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
                                         else Modifier
                                     )
                                     .then(
@@ -283,13 +283,14 @@ fun HabitDetailCard(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = null,
                                         tint = Color.White,
-                                        modifier = Modifier.size(14.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 } else {
                                     Text(
                                         text = date.dayOfMonth.toString(),
-                                        fontSize = 10.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }

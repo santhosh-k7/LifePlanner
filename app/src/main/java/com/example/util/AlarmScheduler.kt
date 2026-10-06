@@ -16,7 +16,16 @@ import java.time.ZoneId
 object AlarmScheduler {
 
     fun scheduleTaskAlarm(context: Context, task: Task) {
-        if (task.isCompleted) return
+        if (task.isCompleted) {
+            cancelTaskAlarm(context, task.id)
+            return
+        }
+
+        // If no reminder offset requested and no due time set, do not schedule alarm
+        if (task.reminderOffsetMin == null && task.dueTime.isNullOrBlank()) {
+            cancelTaskAlarm(context, task.id)
+            return
+        }
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
 

@@ -78,6 +78,7 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
     val quickAddOverrideDate = MutableStateFlow<String?>(null)
     val quickAddOverridePriority = MutableStateFlow<Priority?>(null)
     val quickAddOverrideCategory = MutableStateFlow<String?>(null)
+    val quickAddOverrideReminderOffset = MutableStateFlow<Int?>(null)
 
     // Task Detail
     val selectedTaskForDetail = MutableStateFlow<TaskWithSubtasks?>(null)
@@ -142,6 +143,9 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
         quickAddInput.value = text
         val parsed = NaturalLanguageParser.parse(text)
         quickAddDraft.value = parsed
+        if (parsed.reminderOffsetMin != null) {
+            quickAddOverrideReminderOffset.value = parsed.reminderOffsetMin
+        }
     }
 
     fun openQuickAdd(initialText: String = "", initialDate: String? = null) {
@@ -149,7 +153,10 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
         quickAddOverrideDate.value = initialDate
         quickAddOverridePriority.value = null
         quickAddOverrideCategory.value = null
-        quickAddDraft.value = NaturalLanguageParser.parse(initialText)
+        quickAddOverrideReminderOffset.value = null
+        val parsed = NaturalLanguageParser.parse(initialText)
+        quickAddDraft.value = parsed
+        quickAddOverrideReminderOffset.value = parsed.reminderOffsetMin
         showQuickAdd.value = true
     }
 
@@ -162,6 +169,7 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
         val finalDate = quickAddOverrideDate.value ?: draft.dueDate
         val finalPriority = quickAddOverridePriority.value ?: draft.priority
         val finalCategory = quickAddOverrideCategory.value ?: draft.categoryId
+        val finalReminderOffset = quickAddOverrideReminderOffset.value ?: draft.reminderOffsetMin
 
         viewModelScope.launch {
             val taskToInsert = Task(
@@ -171,7 +179,8 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
                 durationMin = draft.durationMin,
                 priority = finalPriority,
                 categoryId = finalCategory,
-                repeatRule = draft.repeatRule
+                repeatRule = draft.repeatRule,
+                reminderOffsetMin = finalReminderOffset
             )
             val newId = repository.insertTask(taskToInsert)
             AlarmScheduler.scheduleTaskAlarm(getApplication<Application>(), taskToInsert.copy(id = newId))
@@ -181,9 +190,11 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
                 quickAddDraft.value = NaturalLanguageParser.parse("")
                 quickAddOverridePriority.value = null
                 quickAddOverrideCategory.value = null
+                quickAddOverrideReminderOffset.value = null
             } else {
                 showQuickAdd.value = false
                 quickAddInput.value = ""
+                quickAddOverrideReminderOffset.value = null
             }
         }
     }

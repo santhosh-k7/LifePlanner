@@ -60,6 +60,32 @@ class ExampleUnitTest {
     }
 
     @Test
+    fun testNaturalLanguageParser_othersCategory() {
+        val baseDate = LocalDate.of(2026, 10, 6)
+        val input = "Send feedback tomorrow !low #others"
+        val draft = NaturalLanguageParser.parse(input, baseDate)
+
+        assertEquals("Send feedback", draft.title)
+        assertEquals("others", draft.categoryId)
+    }
+
+    @Test
+    fun testNaturalLanguageParser_reminderOffset() {
+        val baseDate = LocalDate.of(2026, 10, 6)
+        val input10 = "Doctor appointment tomorrow 3pm 10m before !high"
+        val draft10 = NaturalLanguageParser.parse(input10, baseDate)
+        assertEquals(10, draft10.reminderOffsetMin)
+
+        val input30 = "Team sync tomorrow 11am 30 mins before"
+        val draft30 = NaturalLanguageParser.parse(input30, baseDate)
+        assertEquals(30, draft30.reminderOffsetMin)
+
+        val inputOnTime = "Flight check-in tomorrow 9am on time"
+        val draftOnTime = NaturalLanguageParser.parse(inputOnTime, baseDate)
+        assertEquals(0, draftOnTime.reminderOffsetMin)
+    }
+
+    @Test
     fun testHabitStreakCalculation_withForgivingGraceDay() {
         val today = LocalDate.now()
         val logs = listOf(

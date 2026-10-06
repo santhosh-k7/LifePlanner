@@ -114,6 +114,13 @@ class LifePlannerRepository(
     suspend fun deleteHabit(habit: Habit) = habitDao.deleteHabit(habit)
 
     suspend fun toggleHabitLog(habitId: Long, date: String = DateTimeUtils.todayStr()) {
+        try {
+            val targetDate = java.time.LocalDate.parse(date)
+            if (targetDate.isAfter(java.time.LocalDate.now())) {
+                return // Cannot complete habit in the future
+            }
+        } catch (_: Exception) {}
+
         val count = habitDao.isHabitCompletedOnDate(habitId, date)
         if (count > 0) {
             habitDao.unlogHabit(habitId, date)

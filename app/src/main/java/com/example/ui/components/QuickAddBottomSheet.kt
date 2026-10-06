@@ -39,6 +39,7 @@ fun QuickAddBottomSheet(
     val overrideDate by viewModel.quickAddOverrideDate.collectAsState()
     val overridePriority by viewModel.quickAddOverridePriority.collectAsState()
     val overrideCategory by viewModel.quickAddOverrideCategory.collectAsState()
+    val reminderOffset by viewModel.quickAddOverrideReminderOffset.collectAsState()
 
     val focusRequester = remember { FocusRequester() }
 
@@ -59,20 +60,19 @@ fun QuickAddBottomSheet(
                 .padding(horizontal = 20.dp, vertical = 8.dp)
                 .navigationBarsPadding()
         ) {
-            // Title Bar
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Title Header (Column layout to prevent any text overlapping on narrow mobile screens)
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Quick Capture",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "e.g. Call gym tomorrow 6pm !high #health",
-                    style = MaterialTheme.typography.labelSmall,
+                    text = "Try typing: Call client tomorrow 6pm !high #work 10m before",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline
                 )
             }
@@ -83,7 +83,7 @@ fun QuickAddBottomSheet(
             OutlinedTextField(
                 value = input,
                 onValueChange = { viewModel.updateQuickAddInput(it) },
-                placeholder = { Text("What needs doing? Try typing time, date, !priority, #category...") },
+                placeholder = { Text("What needs doing? Type date, time, !priority, #category...", fontSize = 14.sp) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
@@ -100,9 +100,9 @@ fun QuickAddBottomSheet(
                 maxLines = 3
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Live Parsed Detection Badges
+            // Live Parsed Detection Badges (Date, Time, Priority, Category, Repeat)
             val effectiveDate = overrideDate ?: draft.dueDate
             val effectivePriority = overridePriority ?: draft.priority
             val effectiveCategory = overrideCategory ?: draft.categoryId
@@ -116,7 +116,6 @@ fun QuickAddBottomSheet(
                 // Detected Date Chip
                 AssistChip(
                     onClick = {
-                        // Quick toggle: Today -> Tomorrow -> In 3 Days
                         val current = LocalDate.parse(effectiveDate)
                         val next = if (current == LocalDate.now()) {
                             LocalDate.now().plusDays(1)
@@ -192,17 +191,17 @@ fun QuickAddBottomSheet(
                     }
                 )
 
-                // Detected Category Chip (tap to cycle)
+                // Detected Category Chip (tap to cycle: personal -> work -> health -> learning -> others)
                 val catColor = Category.getColor(effectiveCategory)
                 AssistChip(
                     onClick = {
-                        val allCats = listOf("personal", "work", "health", "learning", "other")
-                        val nextIdx = (allCats.indexOf(effectiveCategory) + 1) % allCats.size
+                        val allCats = listOf("personal", "work", "health", "learning", "others")
+                        val nextIdx = (allCats.indexOf(effectiveCategory.lowercase()) + 1) % allCats.size
                         viewModel.quickAddOverrideCategory.value = allCats[nextIdx]
                     },
                     label = {
                         Text(
-                            text = effectiveCategory.replaceFirstChar { it.uppercase() },
+                            text = Category.getDisplayName(effectiveCategory),
                             fontSize = 11.sp,
                             color = catColor,
                             fontWeight = FontWeight.SemiBold
@@ -214,7 +213,7 @@ fun QuickAddBottomSheet(
                 )
 
                 // Detected Repeat Chip
-                if (draft.repeatRule.name != "NONE") {
+                if (draft.repeatRule != com.example.data.model.RepeatRule.NONE) {
                     AssistChip(
                         onClick = {},
                         label = { Text(draft.repeatRule.label, fontSize = 11.sp) },
@@ -222,6 +221,69 @@ fun QuickAddBottomSheet(
                             Icon(Icons.Outlined.Repeat, contentDescription = null, modifier = Modifier.size(14.dp))
                         }
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Notification / Alarm Reminder Selector (User Request 6: 10 mins before, on time, 30 mins before, etc.)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.NotificationsActive,
+                        contentDescription = "Notification Alarm",
+                        modifier = Modifier.size(16.dp),
+                        tint = if (reminderOffset != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Notification & Alarm:",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (reminderOffset != null) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = when (reminderOffset) {
+                                0 -> "At event time"
+                                10 -> "10 mins before"
+                                30 -> "30 mins before"
+                                60 -> "1 hour before"
+                                1440 -> "1 day before"
+                                else -> "${reminderOffset}m before"
+                            },
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        null to "None",
+                        0 to "At event time",
+                        10 to "10m before",
+                        30 to "30m before",
+                        60 to "1h before",
+                        1440 to "1d before"
+                    ).forEach { (offset, label) ->
+                        FilterChip(
+                            selected = reminderOffset == offset,
+                            onClick = { viewModel.quickAddOverrideReminderOffset.value = offset },
+                            label = { Text(label, fontSize = 11.sp) },
+                            leadingIcon = if (reminderOffset == offset) {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                            } else null
+                        )
+                    }
                 }
             }
 
@@ -240,7 +302,7 @@ fun QuickAddBottomSheet(
                         .testTag("quick_add_stay_open_btn"),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("+ Add Another", fontSize = 14.sp)
+                    Text("+ Add Another", fontSize = 13.sp)
                 }
 
                 Button(

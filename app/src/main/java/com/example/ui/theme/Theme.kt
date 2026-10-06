@@ -25,12 +25,14 @@ private val DarkColorScheme = darkColorScheme(
     onTertiary = Color.Black,
     tertiaryContainer = AmberTertiaryContainerDark,
     onTertiaryContainer = AmberOnTertiaryContainerDark,
-    background = PureBlackBackground, // Pure pitch black
+    background = PureBlack, // 100% AMOLED pitch black
     onBackground = BlackOnSurface,
-    surface = BlackSurface, // 0xFF121212
+    surface = PureBlack, // 100% AMOLED pitch black for surfaces
     onSurface = BlackOnSurface,
-    surfaceVariant = BlackSurfaceVariant, // 0xFF1A1A1A
+    surfaceVariant = BlackSurfaceVariant, // Deep OLED subtle elevated
     onSurfaceVariant = BlackOnSurfaceVariant,
+    surfaceContainer = BlackSurface,
+    surfaceContainerHigh = BlackSurfaceCard,
     outline = BlackOutline
 )
 

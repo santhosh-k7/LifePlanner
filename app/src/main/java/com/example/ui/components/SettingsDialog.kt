@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -82,7 +83,9 @@ fun SettingsDialog(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 FilterChip(
@@ -100,7 +103,7 @@ fun SettingsDialog(
                                 FilterChip(
                                     selected = themeMode == 2,
                                     onClick = { viewModel.themeMode.value = 2 },
-                                    label = { Text("Dark") },
+                                    label = { Text("Dark (Pure Black)") },
                                     leadingIcon = { Icon(Icons.Outlined.DarkMode, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                 )
                             }

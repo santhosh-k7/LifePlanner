@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "categories")
 data class Category(
     @PrimaryKey
-    val id: String, // "work", "personal", "health", "learning", "other"
+    val id: String, // "work", "personal", "health", "learning", "others"
     val name: String,
     val colorHex: Long,
     val iconName: String
@@ -18,7 +18,7 @@ data class Category(
             Category("personal", "Personal", 0xFF8B5CF6, "User"),
             Category("health", "Health", 0xFF10B981, "Heart"),
             Category("learning", "Learning", 0xFFF59E0B, "BookOpen"),
-            Category("other", "Other", 0xFF6B7280, "MoreHoriz")
+            Category("others", "Others", 0xFF64748B, "MoreHoriz")
         )
 
         fun getColor(categoryId: String): Color {
@@ -27,8 +27,19 @@ data class Category(
                 "personal" -> Color(0xFF8B5CF6)
                 "health" -> Color(0xFF10B981)
                 "learning" -> Color(0xFFF59E0B)
-                "other", "others" -> Color(0xFF6B7280)
-                else -> Color(0xFF6B7280)
+                "other", "others" -> Color(0xFF64748B)
+                else -> Color(0xFF64748B)
+            }
+        }
+
+        fun getDisplayName(categoryId: String): String {
+            return when (categoryId.lowercase()) {
+                "work" -> "Work"
+                "personal" -> "Personal"
+                "health" -> "Health"
+                "learning" -> "Learning"
+                "other", "others" -> "Others"
+                else -> categoryId.replaceFirstChar { it.uppercase() }
             }
         }
     }

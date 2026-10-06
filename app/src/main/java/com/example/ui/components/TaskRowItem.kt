@@ -57,13 +57,13 @@ fun TaskRowItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = 3.dp)
             .testTag("task_item_${task.id}")
             .clip(RoundedCornerShape(14.dp))
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = if (task.isCompleted) {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
             } else if (isOverdueMode) {
                 MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
             } else {
@@ -76,7 +76,7 @@ fun TaskRowItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Checkbox
@@ -100,7 +100,7 @@ fun TaskRowItem(
                     .background(if (task.isCompleted) MaterialTheme.colorScheme.outline.copy(alpha = 0.5f) else priorityColor)
             )
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             // Title & Badges
             Column(
@@ -125,7 +125,7 @@ fun TaskRowItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Badges flow row: Category pill, Time block, Subtask progress, Focus minutes
+                // Badges flow row: Category pill, Time block, Subtask progress, Focus minutes, Alarm reminder
                 @OptIn(ExperimentalLayoutApi::class)
                 FlowRow(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -138,7 +138,7 @@ fun TaskRowItem(
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
-                            text = task.categoryId.replaceFirstChar { it.uppercase() },
+                            text = Category.getDisplayName(task.categoryId),
                             color = categoryColor,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -185,6 +185,40 @@ fun TaskRowItem(
                         }
                     }
 
+                    // Notification & Alarm indicator badge
+                    if (task.reminderOffsetMin != null) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Notifications,
+                                    contentDescription = "Alarm set",
+                                    modifier = Modifier.size(11.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = when (task.reminderOffsetMin) {
+                                        0 -> "On time"
+                                        10 -> "10m before"
+                                        30 -> "30m before"
+                                        60 -> "1h before"
+                                        1440 -> "1d before"
+                                        else -> "${task.reminderOffsetMin}m"
+                                    },
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+
                     // Subtasks count badge
                     if (subtasks.isNotEmpty()) {
                         Surface(
@@ -214,7 +248,7 @@ fun TaskRowItem(
                     // Focus minutes badge if spent
                     if (task.focusMinutesSpent > 0) {
                         Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(

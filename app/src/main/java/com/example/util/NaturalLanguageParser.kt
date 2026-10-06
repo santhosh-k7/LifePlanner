@@ -17,7 +17,8 @@ data class ParsedTaskDraft(
     val priority: Priority = Priority.MEDIUM,
     val categoryId: String = "personal",
     val repeatRule: RepeatRule = RepeatRule.NONE,
-    val durationMin: Int = 0
+    val durationMin: Int = 0,
+    val reminderOffsetMin: Int? = null
 )
 
 object NaturalLanguageParser {
@@ -29,6 +30,8 @@ object NaturalLanguageParser {
     private val IN_DAYS_REGEX = Pattern.compile("(?i)\\bin\\s+(\\d+)\\s+days?\\b")
     private val REPEAT_REGEX = Pattern.compile("(?i)\\b(every\\s+(day|daily|monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month))\\b")
     private val DURATION_REGEX = Pattern.compile("(?i)\\b(\\d+)\\s*(m|min|mins|minutes|h|hr|hrs|hours)\\b")
+    private val REMINDER_BEFORE_REGEX = Pattern.compile("(?i)\\b(?:remind|notify)?\\s*(\\d+)\\s*(?:m|min|mins|minutes|h|hr|hours)?\\s+before\\b")
+    private val AT_TIME_REMINDER_REGEX = Pattern.compile("(?i)\\b(at\\s+time|on\\s+time|at\\s+event\\s+time)\\b")
 
     fun parse(input: String, baseDate: LocalDate = LocalDate.now()): ParsedTaskDraft {
         if (input.isBlank()) {
@@ -39,7 +42,9 @@ object NaturalLanguageParser {
                 dueTime = null,
                 priority = Priority.MEDIUM,
                 categoryId = "personal",
-                repeatRule = RepeatRule.NONE
+                repeatRule = RepeatRule.NONE,
+                durationMin = 0,
+                reminderOffsetMin = null
             )
         }
 
@@ -50,6 +55,27 @@ object NaturalLanguageParser {
         var detectedCategory = "personal"
         var detectedRepeat = RepeatRule.NONE
         var detectedDuration = 0
+        var detectedReminderOffset: Int? = null
+
+        // Reminder offset parsing (e.g. "10 mins before", "30 mins before", "at time")
+        val reminderMatcher = REMINDER_BEFORE_REGEX.matcher(workingText)
+        if (reminderMatcher.find()) {
+            val numStr = reminderMatcher.group(1)
+            val matchedFull = reminderMatcher.group(0)?.lowercase(Locale.ROOT) ?: ""
+            val numVal = numStr?.toIntOrNull() ?: 10
+            detectedReminderOffset = if (matchedFull.contains("h") || matchedFull.contains("hour")) {
+                numVal * 60
+            } else {
+                numVal
+            }
+            workingText = reminderMatcher.replaceFirst(" ")
+        } else {
+            val atTimeMatcher = AT_TIME_REMINDER_REGEX.matcher(workingText)
+            if (atTimeMatcher.find()) {
+                detectedReminderOffset = 0
+                workingText = atTimeMatcher.replaceFirst(" ")
+            }
+        }
 
         // 1. Extract Priority (!high, !med, !low)
         val priorityMatcher = PRIORITY_REGEX.matcher(workingText)
@@ -63,7 +89,7 @@ object NaturalLanguageParser {
             workingText = priorityMatcher.replaceFirst(" ")
         }
 
-        // 2. Extract Category (#work, #personal, #health, #learning, etc.)
+        // 2. Extract Category (#work, #personal, #health, #learning, #others, etc.)
         val categoryMatcher = CATEGORY_REGEX.matcher(workingText)
         if (categoryMatcher.find()) {
             val catStr = categoryMatcher.group(1).lowercase(Locale.ROOT)
@@ -72,8 +98,9 @@ object NaturalLanguageParser {
                 "personal" -> "personal"
                 "health", "fitness", "gym" -> "health"
                 "learning", "study", "code", "book" -> "learning"
-                "other", "others", "misc", "general" -> "other"
-                else -> "other"
+                "other" -> "other"
+                "others", "misc", "general" -> "others"
+                else -> "others"
             }
             workingText = categoryMatcher.replaceFirst(" ")
         }
@@ -133,16 +160,15 @@ object NaturalLanguageParser {
                     "sun" to DayOfWeek.SUNDAY
                 )
 
-                for ((name, targetDow) in dayMap) {
-                    val pattern = Pattern.compile("(?i)\\b(?:next\\s+)?$name\\b")
-                    val m = pattern.matcher(workingText)
-                    if (m.find()) {
+                for ((dayName, dow) in dayMap) {
+                    val dayRegex = Regex("(?i)\\b(?:next\\s+)?$dayName\\b")
+                    if (dayRegex.containsMatchIn(workingText)) {
                         var target = baseDate.plusDays(1)
-                        while (target.dayOfWeek != targetDow) {
+                        while (target.dayOfWeek != dow) {
                             target = target.plusDays(1)
                         }
                         detectedDate = target
-                        workingText = m.replaceFirst(" ")
+                        workingText = workingText.replace(dayRegex, " ")
                         break
                     }
                 }
@@ -152,27 +178,28 @@ object NaturalLanguageParser {
         // 6. Extract 12-hour Time ("6pm", "9:30am")
         val time12Matcher = TIME_12H_REGEX.matcher(workingText)
         if (time12Matcher.find()) {
-            val hourStr = time12Matcher.group(1)
-            val minStr = time12Matcher.group(2) ?: "00"
-            val amPm = time12Matcher.group(3).lowercase(Locale.ROOT)
-            var hour = hourStr.toIntOrNull() ?: 12
-            if (amPm == "pm" && hour < 12) hour += 12
-            if (amPm == "am" && hour == 12) hour = 0
-            val min = minStr.toIntOrNull() ?: 0
-            detectedTime = String.format(Locale.US, "%02d:%02d", hour, min)
+            val hour = time12Matcher.group(1).toIntOrNull() ?: 12
+            val min = time12Matcher.group(2)?.toIntOrNull() ?: 0
+            val ampm = time12Matcher.group(3).lowercase(Locale.ROOT)
+
+            var h24 = hour
+            if (ampm == "pm" && hour < 12) h24 += 12
+            if (ampm == "am" && hour == 12) h24 = 0
+
+            detectedTime = String.format(Locale.ROOT, "%02d:%02d", h24, min)
             workingText = time12Matcher.replaceFirst(" ")
         } else {
-            // Check 24-hour Time ("15:30")
+            // Check 24-hour Time ("14:30")
             val time24Matcher = TIME_24H_REGEX.matcher(workingText)
             if (time24Matcher.find()) {
-                val hour = time24Matcher.group(1).toIntOrNull() ?: 0
-                val min = time24Matcher.group(2).toIntOrNull() ?: 0
-                detectedTime = String.format(Locale.US, "%02d:%02d", hour, min)
+                val h = time24Matcher.group(1).toIntOrNull() ?: 0
+                val m = time24Matcher.group(2).toIntOrNull() ?: 0
+                detectedTime = String.format(Locale.ROOT, "%02d:%02d", h, m)
                 workingText = time24Matcher.replaceFirst(" ")
             }
         }
 
-        // 7. Extract Duration ("30m", "1h", "45 mins")
+        // 7. Extract Duration ("45min", "1h", "30m")
         val durationMatcher = DURATION_REGEX.matcher(workingText)
         if (durationMatcher.find()) {
             val amount = durationMatcher.group(1).toIntOrNull() ?: 0
@@ -181,11 +208,11 @@ object NaturalLanguageParser {
             workingText = durationMatcher.replaceFirst(" ")
         }
 
-        // Clean title
+        // Clean up remaining text as clean task title
         val cleanedTitle = workingText
             .replace(Regex("\\s+"), " ")
             .trim()
-            .ifBlank { input.trim() }
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }
 
         return ParsedTaskDraft(
             rawInput = input,
@@ -195,7 +222,8 @@ object NaturalLanguageParser {
             priority = detectedPriority,
             categoryId = detectedCategory,
             repeatRule = detectedRepeat,
-            durationMin = detectedDuration
+            durationMin = detectedDuration,
+            reminderOffsetMin = detectedReminderOffset
         )
     }
 }

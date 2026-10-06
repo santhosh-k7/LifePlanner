@@ -26,7 +26,7 @@ val SlateSurfaceVariantLight = Color(0xFFF1F5F9)
 val SlateOnSurfaceVariantLight = Color(0xFF475569)
 val SlateOutlineLight = Color(0xFFCBD5E1)
 
-// Pure Black Dark Palette (True AMOLED pitch black)
+// Pure Black AMOLED Dark Palette (100% pitch black for battery saving & contrast)
 val IndigoPrimaryDark = Color(0xFF818CF8)
 val IndigoOnPrimaryDark = Color(0xFF000000)
 val IndigoPrimaryContainerDark = Color(0xFF1E1B4B)
@@ -42,20 +42,20 @@ val AmberOnTertiaryDark = Color(0xFF000000)
 val AmberTertiaryContainerDark = Color(0xFF451A03)
 val AmberOnTertiaryContainerDark = Color(0xFFFEF3C7)
 
-val PureBlackBackground = Color(0xFF000000) // 100% AMOLED Black
-val BlackSurface = Color(0xFF121212) // Deep dark surface
-val BlackSurfaceVariant = Color(0xFF1A1A1A)
-val BlackSurfaceCard = Color(0xFF18181B)
+val PureBlack = Color(0xFF000000) // 100% pitch black
+val BlackSurface = Color(0xFF0A0A0A) // Very deep OLED card surface
+val BlackSurfaceVariant = Color(0xFF141416)
+val BlackSurfaceCard = Color(0xFF121214)
 val BlackOnSurface = Color(0xFFF4F4F5)
 val BlackOnSurfaceVariant = Color(0xFFA1A1AA)
-val BlackOutline = Color(0xFF2E2E32)
+val BlackOutline = Color(0xFF27272A)
 
 // Accent & Category Colors
 val CategoryWork = Color(0xFF3B82F6) // Blue
 val CategoryPersonal = Color(0xFF8B5CF6) // Purple
 val CategoryHealth = Color(0xFF10B981) // Emerald
 val CategoryLearning = Color(0xFFF59E0B) // Amber
-val CategoryOther = Color(0xFF6B7280) // Gray/Slate
+val CategoryOthers = Color(0xFF64748B) // Slate/Gray
 
 val PriorityHigh = Color(0xFFEF4444) // Red
 val PriorityMedium = Color(0xFFF97316) // Orange

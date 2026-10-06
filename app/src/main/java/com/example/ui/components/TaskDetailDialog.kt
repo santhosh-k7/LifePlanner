@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.data.model.Category
 import com.example.data.model.Priority
 import com.example.data.model.RepeatRule
 import com.example.data.model.Subtask
@@ -45,6 +47,7 @@ fun TaskDetailDialog(
     var priority by remember { mutableStateOf(task.priority) }
     var categoryId by remember { mutableStateOf(task.categoryId) }
     var repeatRule by remember { mutableStateOf(task.repeatRule) }
+    var reminderOffsetMin by remember { mutableStateOf<Int?>(task.reminderOffsetMin) }
 
     var newSubtaskText by remember { mutableStateOf("") }
 
@@ -65,7 +68,7 @@ fun TaskDetailDialog(
                     .fillMaxSize()
                     .padding(20.dp)
             ) {
-                // Header
+                // Header (No overlap)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -81,7 +84,7 @@ fun TaskDetailDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Column(
                     modifier = Modifier
@@ -116,27 +119,72 @@ fun TaskDetailDialog(
                         OutlinedTextField(
                             value = dueDate,
                             onValueChange = { dueDate = it },
-                            label = { Text("Due Date (YYYY-MM-DD)") },
+                            label = { Text("Due Date (YYYY-MM-DD)", fontSize = 12.sp) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
-                            leadingIcon = { Icon(Icons.Outlined.CalendarToday, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            leadingIcon = { Icon(Icons.Outlined.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         )
 
                         OutlinedTextField(
                             value = dueTime,
                             onValueChange = { dueTime = it },
-                            label = { Text("Time (e.g. 14:30)") },
+                            label = { Text("Time (e.g. 14:30)", fontSize = 12.sp) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
-                            leadingIcon = { Icon(Icons.Outlined.Schedule, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            leadingIcon = { Icon(Icons.Outlined.Schedule, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         )
+                    }
+
+                    // Notification & Alarm Selector (User Request 6: Select 10m before, on time, 30m before, etc.)
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Outlined.NotificationsActive,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (reminderOffsetMin != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Notification & Alarm Reminder",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(top = 2.dp)
+                        ) {
+                            listOf(
+                                null to "None",
+                                0 to "At event time",
+                                10 to "10 mins before",
+                                30 to "30 mins before",
+                                60 to "1 hour before",
+                                1440 to "1 day before"
+                            ).forEach { (offset, label) ->
+                                FilterChip(
+                                    selected = reminderOffsetMin == offset,
+                                    onClick = { reminderOffsetMin = offset },
+                                    label = { Text(label, fontSize = 12.sp) },
+                                    leadingIcon = if (reminderOffsetMin == offset) {
+                                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                                    } else null
+                                )
+                            }
+                        }
                     }
 
                     // Duration Minutes for Time Blocking
                     Column {
                         Text(
                             text = "Time-block Duration: ${if (durationMin > 0) "$durationMin minutes" else "None"}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         @OptIn(ExperimentalLayoutApi::class)
@@ -157,7 +205,7 @@ fun TaskDetailDialog(
 
                     // Priority Row
                     Column {
-                        Text("Priority", style = MaterialTheme.typography.bodyMedium)
+                        Text("Priority", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
                         @OptIn(ExperimentalLayoutApi::class)
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -168,7 +216,7 @@ fun TaskDetailDialog(
                                 FilterChip(
                                     selected = priority == p,
                                     onClick = { priority = p },
-                                    label = { Text(p.label) },
+                                    label = { Text(p.label, fontSize = 12.sp) },
                                     leadingIcon = {
                                         Icon(
                                             Icons.Filled.Flag,
@@ -186,20 +234,27 @@ fun TaskDetailDialog(
                         }
                     }
 
-                    // Category Row
+                    // Category Row (Including "Others" explicitly)
                     Column {
-                        Text("Category", style = MaterialTheme.typography.bodyMedium)
+                        Text("Category", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
                         @OptIn(ExperimentalLayoutApi::class)
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.padding(top = 4.dp)
                         ) {
-                            listOf("work", "personal", "health", "learning", "other").forEach { cat ->
+                            listOf("work", "personal", "health", "learning", "others").forEach { cat ->
+                                val catColor = Category.getColor(cat)
                                 FilterChip(
-                                    selected = categoryId == cat,
+                                    selected = categoryId.lowercase() == cat.lowercase() || (cat == "others" && categoryId.lowercase() == "other"),
                                     onClick = { categoryId = cat },
-                                    label = { Text(cat.replaceFirstChar { it.uppercase() }) }
+                                    label = {
+                                        Text(
+                                            Category.getDisplayName(cat),
+                                            fontSize = 12.sp,
+                                            color = if (categoryId.lowercase() == cat.lowercase()) MaterialTheme.colorScheme.onSurface else catColor
+                                        )
+                                    }
                                 )
                             }
                         }
@@ -207,7 +262,7 @@ fun TaskDetailDialog(
 
                     // Repeat Rule Row
                     Column {
-                        Text("Recurring", style = MaterialTheme.typography.bodyMedium)
+                        Text("Recurring & Repeat", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
                         @OptIn(ExperimentalLayoutApi::class)
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -276,7 +331,7 @@ fun TaskDetailDialog(
                             OutlinedTextField(
                                 value = newSubtaskText,
                                 onValueChange = { newSubtaskText = it },
-                                placeholder = { Text("Add subtask...") },
+                                placeholder = { Text("Add subtask...", fontSize = 13.sp) },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(10.dp),
                                 singleLine = true
@@ -296,12 +351,13 @@ fun TaskDetailDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Bottom Buttons: Delete & Save
+                // Bottom Buttons: Delete, Cancel, Save
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
                         onClick = {
@@ -310,7 +366,7 @@ fun TaskDetailDialog(
                         },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
-                        Icon(Icons.Outlined.Delete, contentDescription = null)
+                        Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Delete")
                     }
@@ -332,7 +388,8 @@ fun TaskDetailDialog(
                                     durationMin = durationMin,
                                     priority = priority,
                                     categoryId = categoryId,
-                                    repeatRule = repeatRule
+                                    repeatRule = repeatRule,
+                                    reminderOffsetMin = reminderOffsetMin
                                 )
                             )
                         }

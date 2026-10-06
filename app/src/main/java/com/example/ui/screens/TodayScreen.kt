@@ -295,30 +295,37 @@ fun TodayScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { isOverdueExpanded = !isOverdueExpanded },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Warning,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.error,
                                     modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "Overdue (${overdueTasks.size})",
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.error
+                                    color = MaterialTheme.colorScheme.error,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                             }
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.End
+                            ) {
                                 TextButton(
                                     onClick = { viewModel.moveAllOverdueToToday() },
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
-                                    Text("Move all to today", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                                    Text("Move to today", fontSize = 11.sp, color = MaterialTheme.colorScheme.error, maxLines = 1)
                                 }
                                 Icon(
                                     imageVector = if (isOverdueExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,

@@ -65,18 +65,18 @@ fun TimeBlockingTimeline(
             ) {
                 // Time label on left
                 Column(
-                    modifier = Modifier.widthIn(min = 60.dp, max = 80.dp),
+                    modifier = Modifier.widthIn(min = 52.dp, max = 68.dp),
                     horizontalAlignment = Alignment.End
                 ) {
                     Text(
                         text = DateTimeUtils.formatTime12H(task.dueTime),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
                     )
                     Text(
                         text = "${if (task.durationMin > 0) task.durationMin else 30} min",
-                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.outline,
                         maxLines = 1
                     )
@@ -145,7 +145,7 @@ fun TimeBlockingTimeline(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    text = task.categoryId.replaceFirstChar { it.uppercase() },
+                                    text = Category.getDisplayName(task.categoryId),
                                     fontSize = 11.sp,
                                     color = categoryColor,
                                     fontWeight = FontWeight.Medium,
