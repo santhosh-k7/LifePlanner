@@ -69,9 +69,11 @@ object NaturalLanguageParser {
             val catStr = categoryMatcher.group(1).lowercase(Locale.ROOT)
             detectedCategory = when (catStr) {
                 "work", "job" -> "work"
+                "personal" -> "personal"
                 "health", "fitness", "gym" -> "health"
                 "learning", "study", "code", "book" -> "learning"
-                else -> "personal"
+                "other", "others", "misc", "general" -> "other"
+                else -> "other"
             }
             workingText = categoryMatcher.replaceFirst(" ")
         }

@@ -322,33 +322,59 @@ fun ReviewScreen(
 
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            Column {
+                                            Column(
+                                                modifier = Modifier.weight(1f),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
                                                 Text(
                                                     text = "$completedTotal / $totalCount",
-                                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.onSurface
+                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                 )
-                                                Text("Tasks Completed", style = MaterialTheme.typography.labelSmall)
+                                                Text(
+                                                    "Completed",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    maxLines = 1
+                                                )
                                             }
 
-                                            Column {
+                                            Column(
+                                                modifier = Modifier.weight(1f),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
                                                 Text(
                                                     text = "$rate%",
-                                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.secondary
+                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.secondary,
+                                                    maxLines = 1
                                                 )
-                                                Text("Completion Rate", style = MaterialTheme.typography.labelSmall)
+                                                Text(
+                                                    "Rate",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    maxLines = 1
+                                                )
                                             }
 
-                                            Column {
+                                            Column(
+                                                modifier = Modifier.weight(1f),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
                                                 Text(
                                                     text = "${focusHours}h ${(totalFocusSec ?: 0L) % 3600 / 60}m",
-                                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                                    color = MaterialTheme.colorScheme.tertiary
+                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    maxLines = 1,
+                                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                 )
-                                                Text("Focus Logged", style = MaterialTheme.typography.labelSmall)
+                                                Text(
+                                                    "Focus",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    maxLines = 1
+                                                )
                                             }
                                         }
 
@@ -626,7 +652,7 @@ fun ReviewScreen(
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
 
-                                val categories = listOf("work", "personal", "health", "learning")
+                                val categories = listOf("work", "personal", "health", "learning", "other")
                                 categories.forEach { catId ->
                                     val count = allTasks.count { it.task.categoryId == catId && it.task.isCompleted }
                                     val catColor = Category.getColor(catId)

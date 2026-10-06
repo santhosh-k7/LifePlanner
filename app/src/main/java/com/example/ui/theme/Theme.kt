@@ -8,28 +8,30 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
+// Pure Black AMOLED Dark Color Scheme
 private val DarkColorScheme = darkColorScheme(
     primary = IndigoPrimaryDark,
-    onPrimary = IndigoOnPrimaryDark,
+    onPrimary = Color.Black,
     primaryContainer = IndigoPrimaryContainerDark,
     onPrimaryContainer = IndigoOnPrimaryContainerDark,
     secondary = TealSecondaryDark,
-    onSecondary = TealOnSecondaryDark,
+    onSecondary = Color.Black,
     secondaryContainer = TealSecondaryContainerDark,
     onSecondaryContainer = TealOnSecondaryContainerDark,
     tertiary = AmberTertiaryDark,
-    onTertiary = AmberOnTertiaryDark,
+    onTertiary = Color.Black,
     tertiaryContainer = AmberTertiaryContainerDark,
     onTertiaryContainer = AmberOnTertiaryContainerDark,
-    background = SlateBackgroundDark,
-    onBackground = SlateOnBackgroundDark,
-    surface = SlateSurfaceDark,
-    onSurface = SlateOnSurfaceDark,
-    surfaceVariant = SlateSurfaceVariantDark,
-    onSurfaceVariant = SlateOnSurfaceVariantDark,
-    outline = SlateOutlineDark
+    background = PureBlackBackground, // Pure pitch black
+    onBackground = BlackOnSurface,
+    surface = BlackSurface, // 0xFF121212
+    onSurface = BlackOnSurface,
+    surfaceVariant = BlackSurfaceVariant, // 0xFF1A1A1A
+    onSurfaceVariant = BlackOnSurfaceVariant,
+    outline = BlackOutline
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -57,7 +59,7 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun LifePlannerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Keep intentional calm branding by default
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

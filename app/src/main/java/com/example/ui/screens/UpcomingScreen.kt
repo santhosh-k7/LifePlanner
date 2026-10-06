@@ -191,7 +191,7 @@ fun UpcomingScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(weekDays) { date ->
                         val dateStr = date.toString()
@@ -207,7 +207,7 @@ fun UpcomingScreen(
 
                         Card(
                             modifier = Modifier
-                                .width(46.dp)
+                                .width(50.dp)
                                 .clip(RoundedCornerShape(14.dp))
                                 .clickable { selectedWeeklyDay = date }
                                 .then(

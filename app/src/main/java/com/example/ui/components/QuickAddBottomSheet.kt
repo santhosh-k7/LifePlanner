@@ -196,7 +196,7 @@ fun QuickAddBottomSheet(
                 val catColor = Category.getColor(effectiveCategory)
                 AssistChip(
                     onClick = {
-                        val allCats = listOf("personal", "work", "health", "learning")
+                        val allCats = listOf("personal", "work", "health", "learning", "other")
                         val nextIdx = (allCats.indexOf(effectiveCategory) + 1) % allCats.size
                         viewModel.quickAddOverrideCategory.value = allCats[nextIdx]
                     },

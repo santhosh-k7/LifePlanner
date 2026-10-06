@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.db.LifePlannerDatabase
 import com.example.data.model.*
 import com.example.data.repository.LifePlannerRepository
+import com.example.util.AlarmScheduler
 import com.example.util.DateTimeUtils
 import com.example.util.NaturalLanguageParser
 import com.example.util.ParsedTaskDraft
@@ -163,17 +164,17 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
         val finalCategory = quickAddOverrideCategory.value ?: draft.categoryId
 
         viewModelScope.launch {
-            repository.insertTask(
-                Task(
-                    title = finalTitle,
-                    dueDate = finalDate,
-                    dueTime = draft.dueTime,
-                    durationMin = draft.durationMin,
-                    priority = finalPriority,
-                    categoryId = finalCategory,
-                    repeatRule = draft.repeatRule
-                )
+            val taskToInsert = Task(
+                title = finalTitle,
+                dueDate = finalDate,
+                dueTime = draft.dueTime,
+                durationMin = draft.durationMin,
+                priority = finalPriority,
+                categoryId = finalCategory,
+                repeatRule = draft.repeatRule
             )
+            val newId = repository.insertTask(taskToInsert)
+            AlarmScheduler.scheduleTaskAlarm(getApplication<Application>(), taskToInsert.copy(id = newId))
             performHapticFeedback()
             if (stayOpen) {
                 quickAddInput.value = ""
@@ -191,9 +192,16 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
     fun toggleTaskComplete(task: Task) {
         viewModelScope.launch {
             repository.toggleTaskCompleted(task.id, task.isCompleted)
+            if (!task.isCompleted) {
+                // Task is now completed, cancel active alarm
+                AlarmScheduler.cancelTaskAlarm(getApplication<Application>(), task.id)
+            } else {
+                // Task was reopened, reschedule alarm
+                AlarmScheduler.scheduleTaskAlarm(getApplication<Application>(), task.copy(isCompleted = false))
+            }
             performHapticFeedback()
 
-            // If recurring and completing, generate next occurrence
+            // If recurring and completing, generate next occurrence and schedule its alarm
             if (!task.isCompleted && task.repeatRule != RepeatRule.NONE) {
                 val nextDate = try {
                     val curr = LocalDate.parse(task.dueDate)
@@ -206,14 +214,14 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
                 } catch (e: Exception) { null }
 
                 if (nextDate != null) {
-                    repository.insertTask(
-                        task.copy(
-                            id = 0,
-                            dueDate = nextDate,
-                            isCompleted = false,
-                            completedAt = null
-                        )
+                    val nextTask = task.copy(
+                        id = 0,
+                        dueDate = nextDate,
+                        isCompleted = false,
+                        completedAt = null
                     )
+                    val newId = repository.insertTask(nextTask)
+                    AlarmScheduler.scheduleTaskAlarm(getApplication<Application>(), nextTask.copy(id = newId))
                 }
             }
         }
@@ -221,6 +229,7 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
 
     fun deleteTask(taskId: Long) {
         viewModelScope.launch {
+            AlarmScheduler.cancelTaskAlarm(getApplication<Application>(), taskId)
             repository.deleteTask(taskId)
             if (selectedTaskForDetail.value?.task?.id == taskId) {
                 selectedTaskForDetail.value = null
@@ -231,6 +240,10 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
     fun rescheduleTask(taskId: Long, newDate: String) {
         viewModelScope.launch {
             repository.rescheduleTask(taskId, newDate)
+            val existing = allTasks.value.find { it.task.id == taskId }?.task
+            if (existing != null) {
+                AlarmScheduler.scheduleTaskAlarm(getApplication<Application>(), existing.copy(dueDate = newDate))
+            }
             taskToReschedule.value = null
         }
     }
@@ -265,6 +278,11 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
     fun updateTaskDetails(task: Task) {
         viewModelScope.launch {
             repository.updateTask(task)
+            if (!task.isCompleted) {
+                AlarmScheduler.scheduleTaskAlarm(getApplication<Application>(), task)
+            } else {
+                AlarmScheduler.cancelTaskAlarm(getApplication<Application>(), task.id)
+            }
             selectedTaskForDetail.value = null
         }
     }
@@ -278,6 +296,14 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun toggleHabitOnDate(habitId: Long, date: String) {
+        // Enforce logic: Cannot complete habits for future dates!
+        try {
+            val target = LocalDate.parse(date)
+            if (target.isAfter(LocalDate.now())) {
+                return
+            }
+        } catch (_: Exception) {}
+
         viewModelScope.launch {
             repository.toggleHabitLog(habitId, date)
             performHapticFeedback()

@@ -139,8 +139,10 @@ fun TaskDetailDialog(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Row(
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.padding(top = 4.dp)
                         ) {
                             listOf(0, 15, 30, 45, 60, 90).forEach { mins ->
@@ -156,8 +158,10 @@ fun TaskDetailDialog(
                     // Priority Row
                     Column {
                         Text("Priority", style = MaterialTheme.typography.bodyMedium)
-                        Row(
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.padding(top = 4.dp)
                         ) {
                             Priority.values().forEach { p ->
@@ -185,11 +189,13 @@ fun TaskDetailDialog(
                     // Category Row
                     Column {
                         Text("Category", style = MaterialTheme.typography.bodyMedium)
-                        Row(
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.padding(top = 4.dp)
                         ) {
-                            listOf("work", "personal", "health", "learning").forEach { cat ->
+                            listOf("work", "personal", "health", "learning", "other").forEach { cat ->
                                 FilterChip(
                                     selected = categoryId == cat,
                                     onClick = { categoryId = cat },
@@ -202,8 +208,10 @@ fun TaskDetailDialog(
                     // Repeat Rule Row
                     Column {
                         Text("Recurring", style = MaterialTheme.typography.bodyMedium)
-                        Row(
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.padding(top = 4.dp)
                         ) {
                             RepeatRule.values().forEach { r ->

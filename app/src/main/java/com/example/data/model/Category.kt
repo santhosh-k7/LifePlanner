@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "categories")
 data class Category(
     @PrimaryKey
-    val id: String, // "work", "personal", "health", "learning"
+    val id: String, // "work", "personal", "health", "learning", "other"
     val name: String,
     val colorHex: Long,
     val iconName: String
@@ -17,7 +17,8 @@ data class Category(
             Category("work", "Work", 0xFF3B82F6, "Briefcase"),
             Category("personal", "Personal", 0xFF8B5CF6, "User"),
             Category("health", "Health", 0xFF10B981, "Heart"),
-            Category("learning", "Learning", 0xFFF59E0B, "BookOpen")
+            Category("learning", "Learning", 0xFFF59E0B, "BookOpen"),
+            Category("other", "Other", 0xFF6B7280, "MoreHoriz")
         )
 
         fun getColor(categoryId: String): Color {
@@ -26,7 +27,8 @@ data class Category(
                 "personal" -> Color(0xFF8B5CF6)
                 "health" -> Color(0xFF10B981)
                 "learning" -> Color(0xFFF59E0B)
-                else -> Color(0xFF6366F1)
+                "other", "others" -> Color(0xFF6B7280)
+                else -> Color(0xFF6B7280)
             }
         }
     }

@@ -65,27 +65,29 @@ fun TimeBlockingTimeline(
             ) {
                 // Time label on left
                 Column(
-                    modifier = Modifier.width(68.dp),
+                    modifier = Modifier.widthIn(min = 60.dp, max = 80.dp),
                     horizontalAlignment = Alignment.End
                 ) {
                     Text(
                         text = DateTimeUtils.formatTime12H(task.dueTime),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
                     )
                     Text(
                         text = "${if (task.durationMin > 0) task.durationMin else 30} min",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.outline,
+                        maxLines = 1
                     )
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Timeline vertical indicator line & node
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.width(16.dp)
+                    modifier = Modifier.width(14.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -111,21 +113,25 @@ fun TimeBlockingTimeline(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Colored accent stripe
                         Box(
                             modifier = Modifier
                                 .width(3.5.dp)
-                                .height(28.dp)
+                                .height(32.dp)
                                 .clip(RoundedCornerShape(2.dp))
                                 .background(categoryColor)
                         )
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        Column(modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 4.dp)
+                        ) {
                             Text(
                                 text = task.title,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -133,29 +139,36 @@ fun TimeBlockingTimeline(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
                                 Text(
                                     text = task.categoryId.replaceFirstChar { it.uppercase() },
                                     fontSize = 11.sp,
                                     color = categoryColor,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
 
                                 if (isOverlapping) {
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
                                             imageVector = Icons.Default.Warning,
                                             contentDescription = "Schedule overlap",
                                             tint = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(12.dp)
+                                            modifier = Modifier.size(11.dp)
                                         )
                                         Spacer(modifier = Modifier.width(2.dp))
                                         Text(
                                             text = "Overlap",
                                             fontSize = 10.sp,
                                             color = MaterialTheme.colorScheme.error,
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1
                                         )
                                     }
                                 }
@@ -165,13 +178,13 @@ fun TimeBlockingTimeline(
                         // Focus quick button
                         IconButton(
                             onClick = { onStartFocus(item) },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
                                 contentDescription = "Focus on time block",
                                 tint = categoryColor,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }

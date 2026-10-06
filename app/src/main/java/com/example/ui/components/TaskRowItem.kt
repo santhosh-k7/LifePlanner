@@ -125,10 +125,12 @@ fun TaskRowItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Badges row: Category pill, Time block, Subtask progress
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                // Badges flow row: Category pill, Time block, Subtask progress, Focus minutes
+                @OptIn(ExperimentalLayoutApi::class)
+                FlowRow(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     // Category pill
                     Surface(

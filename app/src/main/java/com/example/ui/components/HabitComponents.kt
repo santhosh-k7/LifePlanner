@@ -238,7 +238,7 @@ fun HabitDetailCard(
 
             // 30-day dot matrix calendar
             Text(
-                text = "Last 30 Days (Tap to toggle):",
+                text = "Last 30 Days (Past & Today only):",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -259,6 +259,7 @@ fun HabitDetailCard(
                             val dStr = date.toString()
                             val isDone = completedDatesSet.contains(dStr)
                             val isToday = date == today
+                            val isFuture = date.isAfter(today)
 
                             Box(
                                 modifier = Modifier
@@ -271,7 +272,10 @@ fun HabitDetailCard(
                                         if (isToday) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
                                         else Modifier
                                     )
-                                    .clickable { onToggleDate(dStr) },
+                                    .then(
+                                        if (!isFuture) Modifier.clickable { onToggleDate(dStr) }
+                                        else Modifier
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (isDone) {

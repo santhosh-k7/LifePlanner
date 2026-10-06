@@ -50,6 +50,16 @@ class ExampleUnitTest {
     }
 
     @Test
+    fun testNaturalLanguageParser_otherCategory() {
+        val baseDate = LocalDate.of(2026, 10, 6)
+        val input = "Pay internet bill tomorrow !med #other"
+        val draft = NaturalLanguageParser.parse(input, baseDate)
+
+        assertEquals("Pay internet bill", draft.title)
+        assertEquals("other", draft.categoryId)
+    }
+
+    @Test
     fun testHabitStreakCalculation_withForgivingGraceDay() {
         val today = LocalDate.now()
         val logs = listOf(
@@ -61,5 +71,13 @@ class ExampleUnitTest {
 
         val (currentStreak, bestStreak) = DateTimeUtils.calculateHabitStreaks(logs, graceDaysPerWeek = 1)
         assertTrue("Streak should not be broken because of forgiving grace day", currentStreak >= 2)
+    }
+
+    @Test
+    fun testFutureDateValidation() {
+        val today = LocalDate.now()
+        val future = today.plusDays(2)
+        assertTrue(future.isAfter(today))
+        assertFalse(today.isAfter(today))
     }
 }
