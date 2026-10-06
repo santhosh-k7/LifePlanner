@@ -1,0 +1,6 @@
+{
+  "name": "LifePlanner",
+  "description": "A calm, fast personal planner combining tasks, routines, habits, and a focus timer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
