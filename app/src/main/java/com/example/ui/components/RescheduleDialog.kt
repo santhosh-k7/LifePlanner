@@ -68,32 +68,37 @@ fun RescheduleDialog(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Presets List
+            val todayStr = DateTimeUtils.formatDate(today)
+            val tomorrowStr = DateTimeUtils.formatDate(tomorrow)
+            val thisWeekendStr = DateTimeUtils.formatDate(thisWeekend)
+            val nextMondayStr = DateTimeUtils.formatDate(nextMonday)
+
             ReschedulePresetItem(
                 title = "Today",
-                subtitle = DateTimeUtils.formatDisplayDate(today.toString()),
+                subtitle = DateTimeUtils.formatDisplayDate(todayStr),
                 icon = Icons.Outlined.Today,
-                onClick = { viewModel.rescheduleTask(task.id, today.toString()) }
+                onClick = { viewModel.rescheduleTask(task.id, todayStr) }
             )
 
             ReschedulePresetItem(
                 title = "Tomorrow",
-                subtitle = DateTimeUtils.formatDisplayDate(tomorrow.toString()),
+                subtitle = DateTimeUtils.formatDisplayDate(tomorrowStr),
                 icon = Icons.Outlined.WbSunny,
-                onClick = { viewModel.rescheduleTask(task.id, tomorrow.toString()) }
+                onClick = { viewModel.rescheduleTask(task.id, tomorrowStr) }
             )
 
             ReschedulePresetItem(
                 title = "This Weekend",
-                subtitle = DateTimeUtils.formatDisplayDate(thisWeekend.toString()),
+                subtitle = DateTimeUtils.formatDisplayDate(thisWeekendStr),
                 icon = Icons.Outlined.Weekend,
-                onClick = { viewModel.rescheduleTask(task.id, thisWeekend.toString()) }
+                onClick = { viewModel.rescheduleTask(task.id, thisWeekendStr) }
             )
 
             ReschedulePresetItem(
                 title = "Next Week",
-                subtitle = DateTimeUtils.formatDisplayDate(nextMonday.toString()),
+                subtitle = DateTimeUtils.formatDisplayDate(nextMondayStr),
                 icon = Icons.Outlined.NextWeek,
-                onClick = { viewModel.rescheduleTask(task.id, nextMonday.toString()) }
+                onClick = { viewModel.rescheduleTask(task.id, nextMondayStr) }
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -115,7 +120,7 @@ fun RescheduleDialog(
                     OutlinedTextField(
                         value = customDateInput,
                         onValueChange = { customDateInput = it },
-                        label = { Text("YYYY-MM-DD") },
+                        label = { Text("dd-MM-yyyy") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)

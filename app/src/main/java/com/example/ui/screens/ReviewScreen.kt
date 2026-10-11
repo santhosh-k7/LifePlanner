@@ -42,7 +42,6 @@ fun ReviewScreen(
 
     val todayTasks by viewModel.todayTasks.collectAsState()
     val allTasks by viewModel.allTasks.collectAsState()
-    val habits by viewModel.allHabits.collectAsState()
     val reviews by viewModel.allReviews.collectAsState()
     val totalFocusSec by viewModel.totalFocusSeconds.collectAsState()
 

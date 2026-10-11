@@ -166,7 +166,7 @@ fun SettingsDialog(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "• Quiet Hours: 10:00 PM – 7:00 AM\n• Zero guilt: 1 grace day per week for habit streaks\n• 100% offline-first: private, instant SQLite storage on this device only\n• No teams, no ads, no clutter",
+                                text = "• Quiet Hours: 10:00 PM – 7:00 AM\n• Morning task dispatch: unscheduled tasks alerted at 7:00 AM\n• 100% offline-first: private, instant SQLite storage on this device only\n• No teams, no ads, no clutter",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 lineHeight = 20.sp

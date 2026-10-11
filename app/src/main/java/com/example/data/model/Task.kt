@@ -30,15 +30,16 @@ data class Task(
     val id: Long = 0,
     val title: String,
     val notes: String = "",
-    val dueDate: String, // Format: YYYY-MM-DD e.g. "2026-10-06"
+    val dueDate: String, // Format: dd-MM-yyyy e.g. "11-10-2026"
     val dueTime: String? = null, // Format: HH:mm e.g. "14:30"
     val durationMin: Int = 0, // e.g. 15, 30, 45, 60 min for time blocking
     val priority: Priority = Priority.MEDIUM,
-    val categoryId: String = "personal", // "work", "personal", "health", "learning"
+    val categoryId: String = "personal", // "work", "personal", "health", "learning", "coding", "other"
+    val medium: String = "", // e.g. "Online", "In-Person", "Phone Call", "Meet / Zoom", "Desk Work", "Coding"
     val isCompleted: Boolean = false,
     val completedAt: Long? = null,
     val repeatRule: RepeatRule = RepeatRule.NONE,
-    val reminderOffsetMin: Int? = null, // e.g. 0 (at time), 10, 60
+    val reminderOffsetMin: Int? = null, // e.g. 0 (at time), 10, 30, 60
     val snoozedUntilDate: String? = null,
     val orderIndex: Int = 0,
     val focusMinutesSpent: Int = 0,

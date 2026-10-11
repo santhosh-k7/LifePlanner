@@ -11,7 +11,9 @@ class LifePlannerRepository(
     private val routineDao: RoutineDao,
     private val habitDao: HabitDao,
     private val reviewDao: ReviewDao,
-    private val focusDao: FocusDao
+    private val focusDao: FocusDao,
+    private val noteDao: NoteDao,
+    private val leetCodeDao: LeetCodeDao
 ) {
     val allTasks: Flow<List<TaskWithSubtasks>> = taskDao.getAllTasks()
     val todayTasks: Flow<List<TaskWithSubtasks>> = taskDao.getTasksForDate(DateTimeUtils.todayStr())
@@ -23,6 +25,9 @@ class LifePlannerRepository(
     val allReviews: Flow<List<Review>> = reviewDao.getAllReviews()
     val allFocusSessions: Flow<List<FocusSession>> = focusDao.getAllSessions()
     val totalFocusSeconds: Flow<Long?> = focusDao.getTotalFocusSeconds()
+    val allNotes: Flow<List<Note>> = noteDao.getAllNotes()
+    val urgentImportantNotes: Flow<List<Note>> = noteDao.getUrgentImportantNotes()
+    val allLeetCodeProblems: Flow<List<LeetCodeProblem>> = leetCodeDao.getAllProblems()
 
     fun getTasksForDate(date: String): Flow<List<TaskWithSubtasks>> = taskDao.getTasksForDate(date)
 
@@ -134,4 +139,17 @@ class LifePlannerRepository(
 
     // Focus
     suspend fun logFocusSession(session: FocusSession) = focusDao.insertSession(session)
+
+    // Notepad / Notes
+    suspend fun insertNote(note: Note): Long = noteDao.insertNote(note)
+    suspend fun updateNote(note: Note) = noteDao.updateNote(note)
+    suspend fun deleteNote(note: Note) = noteDao.deleteNote(note)
+    suspend fun deleteNoteById(id: Long) = noteDao.deleteNoteById(id)
+    suspend fun togglePinNote(id: Long) = noteDao.togglePin(id)
+
+    // LeetCode Progress
+    suspend fun insertLeetCodeProblem(problem: LeetCodeProblem): Long = leetCodeDao.insertProblem(problem)
+    suspend fun deleteLeetCodeProblem(problem: LeetCodeProblem) = leetCodeDao.deleteProblem(problem)
+    suspend fun deleteLeetCodeProblemById(id: Long) = leetCodeDao.deleteProblemById(id)
+    suspend fun countLeetCodeByDifficulty(diff: String): Int = leetCodeDao.countByDifficulty(diff)
 }

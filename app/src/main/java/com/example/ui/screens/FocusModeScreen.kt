@@ -188,6 +188,26 @@ fun FocusModeScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.NotificationsActive,
+                            contentDescription = null,
+                            tint = phaseColor.copy(alpha = 0.8f),
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = "Sound & haptics on complete",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = phaseColor.copy(alpha = 0.85f)
+                        )
+                    }
                 }
             }
 

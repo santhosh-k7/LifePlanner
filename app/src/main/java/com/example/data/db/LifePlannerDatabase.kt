@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.dao.*
 import com.example.data.model.*
+import com.example.util.DateTimeUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,9 +23,11 @@ import java.time.LocalDate
         Habit::class,
         HabitLog::class,
         Review::class,
-        FocusSession::class
+        FocusSession::class,
+        Note::class,
+        LeetCodeProblem::class
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class LifePlannerDatabase : RoomDatabase() {
@@ -34,6 +37,8 @@ abstract class LifePlannerDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun reviewDao(): ReviewDao
     abstract fun focusDao(): FocusDao
+    abstract fun noteDao(): NoteDao
+    abstract fun leetCodeDao(): LeetCodeDao
 
     companion object {
         @Volatile
@@ -76,31 +81,12 @@ abstract class LifePlannerDatabase : RoomDatabase() {
 
         suspend fun seedStarterData(database: LifePlannerDatabase) {
             val today = LocalDate.now()
-            val todayStr = today.toString()
-            val yesterdayStr = today.minusDays(1).toString()
-            val tomorrowStr = today.plusDays(1).toString()
-            val in3DaysStr = today.plusDays(3).toString()
+            val todayStr = DateTimeUtils.formatDate(today)
+            val yesterdayStr = DateTimeUtils.formatDate(today.minusDays(1))
+            val tomorrowStr = DateTimeUtils.formatDate(today.plusDays(1))
+            val in3DaysStr = DateTimeUtils.formatDate(today.plusDays(3))
 
-            // 1. Seed Habits
-            val habit1 = database.habitDao().insertHabit(
-                Habit(name = "Drink 2L Water", iconEmoji = "💧", targetDaysPerWeek = 7, colorHex = 0xFF0D9488)
-            )
-            val habit2 = database.habitDao().insertHabit(
-                Habit(name = "Morning Walk", iconEmoji = "🚶", targetDaysPerWeek = 5, colorHex = 0xFF10B981)
-            )
-            val habit3 = database.habitDao().insertHabit(
-                Habit(name = "Read 20 Mins", iconEmoji = "📖", targetDaysPerWeek = 6, colorHex = 0xFF8B5CF6)
-            )
-            val habit4 = database.habitDao().insertHabit(
-                Habit(name = "Mindful Journal", iconEmoji = "✨", targetDaysPerWeek = 7, colorHex = 0xFFF59E0B)
-            )
-
-            // Seed some past habit logs for streaks
-            database.habitDao().logHabit(HabitLog(habitId = habit1, date = yesterdayStr))
-            database.habitDao().logHabit(HabitLog(habitId = habit2, date = yesterdayStr))
-            database.habitDao().logHabit(HabitLog(habitId = habit3, date = yesterdayStr))
-
-            // 2. Seed Routines
+            // 1. Seed Routines (Habits completely removed per request)
             val routine1Id = database.routineDao().insertRoutine(
                 Routine(
                     name = "Morning Reset",
@@ -128,7 +114,7 @@ abstract class LifePlannerDatabase : RoomDatabase() {
             database.routineDao().insertStep(RoutineStep(routineId = routine2Id, title = "Evening reflection & plan tomorrow", durationMin = 5, orderIndex = 1))
             database.routineDao().insertStep(RoutineStep(routineId = routine2Id, title = "Dim lights & read book", durationMin = 20, orderIndex = 2))
 
-            // 3. Seed Overdue Task
+            // 2. Seed Overdue Task
             database.taskDao().insertTask(
                 Task(
                     title = "Confirm dentist appointment",
@@ -136,11 +122,13 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     dueDate = yesterdayStr,
                     priority = Priority.MEDIUM,
                     categoryId = "health",
+                    medium = "Phone Call",
+                    reminderOffsetMin = 10,
                     isCompleted = false
                 )
             )
 
-            // 4. Seed Today Tasks
+            // 3. Seed Today Tasks
             val taskId1 = database.taskDao().insertTask(
                 Task(
                     title = "Deep Work: Polish app architecture",
@@ -149,7 +137,9 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     dueTime = "09:30",
                     durationMin = 60,
                     priority = Priority.HIGH,
-                    categoryId = "learning",
+                    categoryId = "coding",
+                    medium = "Desk Work",
+                    reminderOffsetMin = 10,
                     isCompleted = false
                 )
             )
@@ -166,6 +156,8 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     durationMin = 45,
                     priority = Priority.HIGH,
                     categoryId = "work",
+                    medium = "Meeting / Zoom",
+                    reminderOffsetMin = 30,
                     isCompleted = false
                 )
             )
@@ -179,6 +171,8 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     durationMin = 30,
                     priority = Priority.MEDIUM,
                     categoryId = "health",
+                    medium = "In-Person",
+                    reminderOffsetMin = 0,
                     isCompleted = false
                 )
             )
@@ -190,6 +184,8 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     dueDate = todayStr,
                     priority = Priority.LOW,
                     categoryId = "personal",
+                    medium = "In-Person",
+                    reminderOffsetMin = null,
                     isCompleted = false
                 )
             )
@@ -203,12 +199,14 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     durationMin = 15,
                     priority = Priority.MEDIUM,
                     categoryId = "health",
+                    medium = "Desk Work",
+                    reminderOffsetMin = 0,
                     isCompleted = true,
                     completedAt = System.currentTimeMillis() - 7200000
                 )
             )
 
-            // 5. Seed Upcoming Tasks
+            // 4. Seed Upcoming Tasks
             database.taskDao().insertTask(
                 Task(
                     title = "Design team sprint retrospective",
@@ -217,7 +215,9 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     dueTime = "10:30",
                     durationMin = 45,
                     priority = Priority.MEDIUM,
-                    categoryId = "work"
+                    categoryId = "work",
+                    medium = "Online",
+                    reminderOffsetMin = 10
                 )
             )
 
@@ -229,7 +229,9 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     dueTime = "14:00",
                     durationMin = 60,
                     priority = Priority.LOW,
-                    categoryId = "personal"
+                    categoryId = "personal",
+                    medium = "In-Person",
+                    reminderOffsetMin = null
                 )
             )
 
@@ -239,6 +241,87 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     taskTitle = "Deep Work: Polish app architecture",
                     durationSeconds = 1500,
                     sessionType = "POMODORO_FOCUS"
+                )
+            )
+
+            // 7. Seed Notepad (Urgent / Important notes)
+            database.noteDao().insertNote(
+                Note(
+                    title = "🚨 System Launch Checklist",
+                    content = "1. Verify Room DB migration hash\n2. Test alarm notifications on device\n3. Double check dark AMOLED contrast\n4. Confirm zero text clipping on compact screens",
+                    isUrgent = true,
+                    isImportant = true,
+                    isPinned = true,
+                    tag = "Launch",
+                    colorHex = 0xFFEF4444
+                )
+            )
+            database.noteDao().insertNote(
+                Note(
+                    title = "⭐ Architecture Refactor Notes",
+                    content = "Liquid Glass aesthetic relies on subtle refractive gradient borders (1dp), frosted surface alphas (0.65f), and specular highlight passes.",
+                    isUrgent = false,
+                    isImportant = true,
+                    isPinned = true,
+                    tag = "Engineering",
+                    colorHex = 0xFF6366F1
+                )
+            )
+            database.noteDao().insertNote(
+                Note(
+                    title = "⚡ Meeting summary: Client sync",
+                    content = "Deliverable timelines moved up by 3 days. Send finalized API contract before tomorrow morning.",
+                    isUrgent = true,
+                    isImportant = false,
+                    isPinned = false,
+                    tag = "Work",
+                    colorHex = 0xFFF59E0B
+                )
+            )
+
+            // 8. Seed LeetCode Progress
+            database.leetCodeDao().insertProblem(
+                LeetCodeProblem(
+                    problemNumber = 1,
+                    title = "Two Sum",
+                    difficulty = "Easy",
+                    topic = "Array & Hash Table",
+                    dateSolved = todayStr,
+                    notes = "Single pass with HashMap storage of complement: O(N) time and O(N) space.",
+                    timeSpentMinutes = 10
+                )
+            )
+            database.leetCodeDao().insertProblem(
+                LeetCodeProblem(
+                    problemNumber = 146,
+                    title = "LRU Cache",
+                    difficulty = "Medium",
+                    topic = "Design & Doubly Linked List",
+                    dateSolved = todayStr,
+                    notes = "HashMap + DoublyLinkedList for O(1) get and put. Always update node to MRU on access.",
+                    timeSpentMinutes = 25
+                )
+            )
+            database.leetCodeDao().insertProblem(
+                LeetCodeProblem(
+                    problemNumber = 42,
+                    title = "Trapping Rain Water",
+                    difficulty = "Hard",
+                    topic = "Two Pointers & Monotonic Stack",
+                    dateSolved = yesterdayStr,
+                    notes = "Two pointers approach maintaining leftMax and rightMax bounds. O(1) extra space.",
+                    timeSpentMinutes = 35
+                )
+            )
+            database.leetCodeDao().insertProblem(
+                LeetCodeProblem(
+                    problemNumber = 200,
+                    title = "Number of Islands",
+                    difficulty = "Medium",
+                    topic = "Graph & BFS/DFS",
+                    dateSolved = yesterdayStr,
+                    notes = "Sink visited land cells or maintain boolean visited grid. BFS avoids recursion depth limits.",
+                    timeSpentMinutes = 18
                 )
             )
         }

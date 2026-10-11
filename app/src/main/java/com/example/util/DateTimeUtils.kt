@@ -1,22 +1,56 @@
 package com.example.util
 
-import com.example.data.model.HabitLog
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 object DateTimeUtils {
 
-    private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    private val MONTH_DAY_FORMATTER = DateTimeFormatter.ofPattern("EEE, MMM d")
-    private val FULL_DISPLAY_FORMATTER = DateTimeFormatter.ofPattern("EEEE, MMMM d")
+    val DATE_FORMATTER_DD_MM_YYYY: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+    private val DATE_FORMATTER_ISO: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     fun today(): LocalDate = LocalDate.now()
 
-    fun todayStr(): String = today().format(DATE_FORMATTER)
+    /**
+     * Standard date string in requested format: dd-MM-yyyy (e.g. "11-10-2026")
+     */
+    fun todayStr(): String = today().format(DATE_FORMATTER_DD_MM_YYYY)
+
+    fun formatDate(date: LocalDate): String = date.format(DATE_FORMATTER_DD_MM_YYYY)
+
+    /**
+     * Safely parse a date string supporting both dd-MM-yyyy and yyyy-MM-dd.
+     */
+    fun parseDate(dateStr: String?): LocalDate {
+        if (dateStr.isNullOrBlank()) return today()
+        return try {
+            val trimmed = dateStr.trim()
+            if (trimmed.contains("-")) {
+                val parts = trimmed.split("-")
+                if (parts[0].length == 4) {
+                    // yyyy-MM-dd
+                    LocalDate.parse(trimmed, DATE_FORMATTER_ISO)
+                } else {
+                    // dd-MM-yyyy
+                    LocalDate.parse(trimmed, DATE_FORMATTER_DD_MM_YYYY)
+                }
+            } else {
+                today()
+            }
+        } catch (_: Exception) {
+            today()
+        }
+    }
+
+    /**
+     * Format any date string to standard dd-MM-yyyy.
+     */
+    fun toDdMmYyyy(dateStr: String?): String {
+        return formatDate(parseDate(dateStr))
+    }
 
     fun getGreeting(): String {
         val hour = LocalTime.now().hour
@@ -29,20 +63,22 @@ object DateTimeUtils {
     }
 
     fun formatHeaderDate(date: LocalDate = today()): String {
-        return date.format(FULL_DISPLAY_FORMATTER)
+        val dayOfWeek = date.format(DateTimeFormatter.ofPattern("EEEE"))
+        val formattedDate = date.format(DATE_FORMATTER_DD_MM_YYYY)
+        return "$dayOfWeek, $formattedDate"
     }
 
     fun formatDisplayDate(dateStr: String): String {
         return try {
-            val date = LocalDate.parse(dateStr, DATE_FORMATTER)
+            val date = parseDate(dateStr)
             val today = today()
             val diff = ChronoUnit.DAYS.between(today, date)
+            val formatted = date.format(DATE_FORMATTER_DD_MM_YYYY)
             when (diff) {
-                0L -> "Today, ${date.format(DateTimeFormatter.ofPattern("MMM d"))}"
-                1L -> "Tomorrow, ${date.format(DateTimeFormatter.ofPattern("MMM d"))}"
-                -1L -> "Yesterday, ${date.format(DateTimeFormatter.ofPattern("MMM d"))}"
-                in 2..6 -> date.format(DateTimeFormatter.ofPattern("EEE, MMM d"))
-                else -> date.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+                0L -> "Today ($formatted)"
+                1L -> "Tomorrow ($formatted)"
+                -1L -> "Yesterday ($formatted)"
+                else -> formatted
             }
         } catch (e: Exception) {
             dateStr
@@ -51,7 +87,7 @@ object DateTimeUtils {
 
     fun formatShortDay(dateStr: String): String {
         return try {
-            val date = LocalDate.parse(dateStr, DATE_FORMATTER)
+            val date = parseDate(dateStr)
             date.format(DateTimeFormatter.ofPattern("EEE"))
         } catch (e: Exception) {
             dateStr
@@ -60,7 +96,7 @@ object DateTimeUtils {
 
     fun formatShortDayNumber(dateStr: String): String {
         return try {
-            val date = LocalDate.parse(dateStr, DATE_FORMATTER)
+            val date = parseDate(dateStr)
             date.dayOfMonth.toString()
         } catch (e: Exception) {
             ""
@@ -70,7 +106,7 @@ object DateTimeUtils {
     fun formatTime12H(timeStr: String?): String {
         if (timeStr.isNullOrBlank()) return ""
         return try {
-            val parts = timeStr.split(":")
+            val parts = timeStr.trim().split(":")
             val hour = parts[0].toInt()
             val min = parts[1].toInt()
             val amPm = if (hour >= 12) "PM" else "AM"
@@ -91,77 +127,6 @@ object DateTimeUtils {
         return String.format(Locale.US, "%02d:%02d", minutes, seconds)
     }
 
-    fun calculateHabitStreaks(
-        logs: List<HabitLog>,
-        graceDaysPerWeek: Int = 1
-    ): Pair<Int, Int> { // Pair(currentStreak, bestStreak)
-        if (logs.isEmpty()) return Pair(0, 0)
-
-        val logDates = logs.filter { it.isCompleted }.map { it.date }.toSet()
-        if (logDates.isEmpty()) return Pair(0, 0)
-
-        val today = today()
-        var currentStreak = 0
-        var bestStreak = 0
-        var streak = 0
-        var graceUsedThisWeek = 0
-        var currentWeekNumber = -1
-
-        // Check recent days backwards for current streak
-        var checkDate = today
-        // If today is not logged yet, start checking from yesterday so active streak is not broken
-        if (!logDates.contains(today.toString())) {
-            checkDate = today.minusDays(1)
-        }
-
-        var tempDate = checkDate
-        var missedStreakDaysInARow = 0
-
-        while (true) {
-            val dStr = tempDate.toString()
-            if (logDates.contains(dStr)) {
-                currentStreak++
-                missedStreakDaysInARow = 0
-            } else {
-                // Check if grace day covers it
-                if (graceDaysPerWeek > 0 && missedStreakDaysInARow == 0) {
-                    // One grace day permitted
-                    missedStreakDaysInARow++
-                } else {
-                    break
-                }
-            }
-            tempDate = tempDate.minusDays(1)
-            if (ChronoUnit.DAYS.between(tempDate, today) > 365) break
-        }
-
-        // Calculate all-time best streak
-        val sortedDates = logDates.map { LocalDate.parse(it, DATE_FORMATTER) }.sorted()
-        streak = 0
-        var lastDate: LocalDate? = null
-
-        for (date in sortedDates) {
-            if (lastDate == null) {
-                streak = 1
-            } else {
-                val gap = ChronoUnit.DAYS.between(lastDate, date)
-                if (gap == 1L) {
-                    streak++
-                } else if (gap == 2L && graceDaysPerWeek > 0) {
-                    // Grace covered
-                    streak += 2
-                } else {
-                    streak = 1
-                }
-            }
-            if (streak > bestStreak) bestStreak = streak
-            lastDate = date
-        }
-
-        bestStreak = maxOf(bestStreak, currentStreak)
-        return Pair(currentStreak, bestStreak)
-    }
-
     fun getUpcomingDays(count: Int = 14): List<LocalDate> {
         val list = mutableListOf<LocalDate>()
         val today = today()
@@ -169,5 +134,14 @@ object DateTimeUtils {
             list.add(today.plusDays(i.toLong()))
         }
         return list
+    }
+
+    /**
+     * Returns all days for a given year and month.
+     */
+    fun getDaysInMonth(year: Int, month: Int): List<LocalDate> {
+        val ym = YearMonth.of(year, month)
+        val length = ym.lengthOfMonth()
+        return (1..length).map { day -> LocalDate.of(year, month, day) }
     }
 }

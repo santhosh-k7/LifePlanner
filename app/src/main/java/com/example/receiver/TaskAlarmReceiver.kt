@@ -28,6 +28,7 @@ class TaskAlarmReceiver : BroadcastReceiver() {
         const val EXTRA_TASK_CATEGORY = "EXTRA_TASK_CATEGORY"
         const val EXTRA_TASK_PRIORITY = "EXTRA_TASK_PRIORITY"
         const val EXTRA_TASK_DUE_TIME = "EXTRA_TASK_DUE_TIME"
+        const val EXTRA_TASK_MEDIUM = "EXTRA_TASK_MEDIUM"
         const val EXTRA_TASK_REPEAT_RULE = "EXTRA_TASK_REPEAT_RULE"
     }
 
@@ -42,6 +43,7 @@ class TaskAlarmReceiver : BroadcastReceiver() {
                 val category = intent.getStringExtra(EXTRA_TASK_CATEGORY) ?: "other"
                 val priorityStr = intent.getStringExtra(EXTRA_TASK_PRIORITY) ?: "MEDIUM"
                 val dueTime = intent.getStringExtra(EXTRA_TASK_DUE_TIME)
+                val medium = intent.getStringExtra(EXTRA_TASK_MEDIUM)
                 val repeatRuleStr = intent.getStringExtra(EXTRA_TASK_REPEAT_RULE) ?: "NONE"
 
                 val priority = try { Priority.valueOf(priorityStr) } catch (_: Exception) { Priority.MEDIUM }
@@ -54,7 +56,8 @@ class TaskAlarmReceiver : BroadcastReceiver() {
                     notes = notes,
                     category = category,
                     priority = priority,
-                    dueTime = dueTime
+                    dueTime = dueTime,
+                    medium = medium
                 )
 
                 // If repeated according to user, schedule next cycle alarm
@@ -65,7 +68,7 @@ class TaskAlarmReceiver : BroadcastReceiver() {
                             val db = LifePlannerDatabase.getDatabase(context)
                             val taskWithSub = db.taskDao().getTaskById(taskId).firstOrNull()
                             if (taskWithSub != null && !taskWithSub.task.isCompleted) {
-                                val currentDue = LocalDate.parse(taskWithSub.task.dueDate)
+                                val currentDue = com.example.util.DateTimeUtils.parseDate(taskWithSub.task.dueDate)
                                 val nextDue = when (repeatRule) {
                                     RepeatRule.DAILY -> currentDue.plusDays(1)
                                     RepeatRule.WEEKLY -> currentDue.plusWeeks(1)
@@ -73,7 +76,7 @@ class TaskAlarmReceiver : BroadcastReceiver() {
                                     RepeatRule.NONE -> null
                                 }
                                 if (nextDue != null) {
-                                    val updated = taskWithSub.task.copy(dueDate = nextDue.toString())
+                                    val updated = taskWithSub.task.copy(dueDate = com.example.util.DateTimeUtils.formatDate(nextDue))
                                     db.taskDao().updateTask(updated)
                                     AlarmScheduler.scheduleTaskAlarm(context, updated)
                                 }

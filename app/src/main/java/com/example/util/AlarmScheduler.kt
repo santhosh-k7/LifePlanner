@@ -5,24 +5,22 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.example.data.model.RepeatRule
 import com.example.data.model.Task
 import com.example.receiver.TaskAlarmReceiver
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 
 object AlarmScheduler {
 
+    /**
+     * Schedules a notification for a task.
+     * Per user requirement:
+     * - "change notification & alarm into only notifications"
+     * - "Generally send all the tasks which notifications are not scheduled by 7:00 am of that day of the task"
+     */
     fun scheduleTaskAlarm(context: Context, task: Task) {
         if (task.isCompleted) {
-            cancelTaskAlarm(context, task.id)
-            return
-        }
-
-        // If no reminder offset requested and no due time set, do not schedule alarm
-        if (task.reminderOffsetMin == null && task.dueTime.isNullOrBlank()) {
             cancelTaskAlarm(context, task.id)
             return
         }
@@ -30,26 +28,31 @@ object AlarmScheduler {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
 
         try {
-            val date = LocalDate.parse(task.dueDate)
-            val time = if (!task.dueTime.isNullOrBlank()) {
+            val date = DateTimeUtils.parseDate(task.dueDate)
+            val triggerDateTime: LocalDateTime
+
+            if (task.reminderOffsetMin != null && !task.dueTime.isNullOrBlank()) {
+                // Specific time + specific reminder offset (e.g. at time, 10m before, 30m before, 1h before)
                 val parts = task.dueTime.split(":")
                 val h = parts.getOrNull(0)?.toIntOrNull() ?: 9
                 val m = parts.getOrNull(1)?.toIntOrNull() ?: 0
-                LocalTime.of(h, m)
+                val dueTime = LocalTime.of(h, m)
+                val baseDateTime = LocalDateTime.of(date, dueTime)
+                triggerDateTime = baseDateTime.minusMinutes(task.reminderOffsetMin.toLong())
+            } else if (!task.dueTime.isNullOrBlank() && task.reminderOffsetMin == null) {
+                // Time set without custom offset -> user rule: notify at 7:00 AM on task day
+                triggerDateTime = LocalDateTime.of(date, LocalTime.of(7, 0))
             } else {
-                LocalTime.of(9, 0) // Default morning reminder for untimed tasks
-            }
-
-            var triggerDateTime = LocalDateTime.of(date, time)
-            if (task.reminderOffsetMin != null && task.reminderOffsetMin > 0) {
-                triggerDateTime = triggerDateTime.minusMinutes(task.reminderOffsetMin.toLong())
+                // No specific notification or time scheduled -> Rule: send all tasks by 7:00 am of that day of the task
+                triggerDateTime = LocalDateTime.of(date, LocalTime.of(7, 0))
             }
 
             val triggerMillis = triggerDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val nowMillis = System.currentTimeMillis()
 
             if (triggerMillis <= nowMillis) {
-                return // In the past, do not alarm
+                // Time has already passed for this notification
+                return
             }
 
             val intent = Intent(context, TaskAlarmReceiver::class.java).apply {
@@ -60,6 +63,7 @@ object AlarmScheduler {
                 putExtra(TaskAlarmReceiver.EXTRA_TASK_CATEGORY, task.categoryId)
                 putExtra(TaskAlarmReceiver.EXTRA_TASK_PRIORITY, task.priority.name)
                 putExtra(TaskAlarmReceiver.EXTRA_TASK_DUE_TIME, task.dueTime)
+                putExtra(TaskAlarmReceiver.EXTRA_TASK_MEDIUM, task.medium)
                 putExtra(TaskAlarmReceiver.EXTRA_TASK_REPEAT_RULE, task.repeatRule.name)
             }
 
@@ -107,7 +111,7 @@ object AlarmScheduler {
             action = TaskAlarmReceiver.ACTION_TASK_REMINDER
             putExtra(TaskAlarmReceiver.EXTRA_TASK_ID, taskId)
             putExtra(TaskAlarmReceiver.EXTRA_TASK_TITLE, title)
-            putExtra(TaskAlarmReceiver.EXTRA_TASK_NOTES, "Snoozed alarm")
+            putExtra(TaskAlarmReceiver.EXTRA_TASK_NOTES, "Snoozed notification")
             putExtra(TaskAlarmReceiver.EXTRA_TASK_CATEGORY, category)
         }
 

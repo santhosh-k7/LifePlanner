@@ -185,7 +185,23 @@ fun TaskRowItem(
                         }
                     }
 
-                    // Notification & Alarm indicator badge
+                    // Medium badge
+                    if (task.medium.isNotBlank()) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = task.medium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    // Notification indicator badge
                     if (task.reminderOffsetMin != null) {
                         Surface(
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
@@ -197,7 +213,7 @@ fun TaskRowItem(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Notifications,
-                                    contentDescription = "Alarm set",
+                                    contentDescription = "Notification set",
                                     modifier = Modifier.size(11.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )

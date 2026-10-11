@@ -31,6 +31,7 @@ import com.example.data.model.RoutineWithSteps
 import com.example.data.model.Task
 import com.example.data.model.TaskWithSubtasks
 import com.example.ui.components.*
+import com.example.ui.theme.*
 import com.example.ui.viewmodel.LifePlannerViewModel
 import com.example.util.DateTimeUtils
 
@@ -43,7 +44,6 @@ fun TodayScreen(
     val todayTasks by viewModel.todayTasks.collectAsState()
     val overdueTasks by viewModel.overdueTasks.collectAsState()
     val routines by viewModel.allRoutines.collectAsState()
-    val habits by viewModel.allHabits.collectAsState()
     val isSuggestionDismissed by viewModel.isSmartSuggestionDismissed.collectAsState()
 
     // Filter today tasks:
@@ -76,11 +76,9 @@ fun TodayScreen(
     ) {
         // 1. Header: Greeting, Date, Progress Ring
         item {
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
-                modifier = Modifier.fillMaxWidth()
+            LiquidGlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                accentColor = Color(0xFF6366F1)
             ) {
                 Row(
                     modifier = Modifier
@@ -204,12 +202,11 @@ fun TodayScreen(
         // 3. "What should I do right now?" Hero Spotlight
         if (nextActionTask != null) {
             item {
-                Card(
+                LiquidGlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("right_now_hero_card"),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
+                    accentColor = Color(0xFF6366F1)
                 ) {
                     Row(
                         modifier = Modifier
@@ -264,25 +261,7 @@ fun TodayScreen(
             }
         }
 
-        // 4. Habits for Today (Horizontal Chips)
-        if (habits.isNotEmpty()) {
-            item {
-                Column {
-                    Text(
-                        text = "Daily Habits",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                    HabitTodayChipRow(
-                        habitsWithLogs = habits,
-                        onToggleHabit = { viewModel.toggleHabitToday(it) }
-                    )
-                }
-            }
-        }
-
-        // 5. Overdue Section (Collapsible)
+        // 4. Overdue Section (Collapsible)
         if (overdueTasks.isNotEmpty()) {
             item {
                 Surface(
@@ -428,10 +407,8 @@ fun TodayScreen(
         if (untimedTasks.isEmpty() && scheduledTimelineTasks.isEmpty()) {
             // Calm Empty State
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
                         modifier = Modifier

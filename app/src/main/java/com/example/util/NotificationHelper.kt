@@ -23,10 +23,10 @@ object NotificationHelper {
 
             val reminderChannel = NotificationChannel(
                 CHANNEL_TASK_REMINDERS,
-                "Task Reminders & Alarms",
+                "Task Notifications",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Alerts and reminders for scheduled tasks"
+                description = "Notifications and timely reminders for scheduled tasks"
                 enableVibration(true)
                 enableLights(true)
             }
@@ -51,7 +51,8 @@ object NotificationHelper {
         notes: String,
         category: String,
         priority: Priority,
-        dueTime: String?
+        dueTime: String?,
+        medium: String? = null
     ) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannels(context)
@@ -97,7 +98,10 @@ object NotificationHelper {
         val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val contentText = buildString {
             if (!dueTime.isNullOrBlank()) {
-                append("Scheduled: ${DateTimeUtils.formatTime12H(dueTime)} · ")
+                append("Time: ${DateTimeUtils.formatTime12H(dueTime)} · ")
+            }
+            if (!medium.isNullOrBlank()) {
+                append("$medium · ")
             }
             append("#${category.replaceFirstChar { it.uppercase() }}")
             if (notes.isNotBlank()) {
@@ -107,7 +111,7 @@ object NotificationHelper {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_TASK_REMINDERS)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("⏰ $title")
+            .setContentTitle("🔔 $title")
             .setContentText(contentText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -125,5 +129,71 @@ object NotificationHelper {
     fun cancelNotification(context: Context, taskId: Long) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(taskId.toInt())
+    }
+
+    fun triggerFocusTimerCompletedAlert(context: Context, taskTitle: String) {
+        createNotificationChannels(context)
+
+        // 1. Play audible notification sound immediately
+        try {
+            val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            val ringtone = RingtoneManager.getRingtone(context, soundUri)
+            ringtone?.play()
+        } catch (_: Exception) {}
+
+        // 2. Strong 3-burst haptic vibration pattern
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager
+                val vibrationEffect = android.os.VibrationEffect.createWaveform(
+                    longArrayOf(0, 350, 150, 350, 150, 500),
+                    intArrayOf(0, 255, 0, 255, 0, 255),
+                    -1
+                )
+                vibratorManager?.defaultVibrator?.vibrate(vibrationEffect)
+            } else {
+                @Suppress("DEPRECATION")
+                val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator?.vibrate(
+                        android.os.VibrationEffect.createWaveform(
+                            longArrayOf(0, 350, 150, 350, 150, 500),
+                            -1
+                        )
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator?.vibrate(longArrayOf(0, 350, 150, 350, 150, 500), -1)
+                }
+            }
+        } catch (_: Exception) {}
+
+        // 3. Post System Notification for heads-up alert
+        try {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val openAppIntent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val openAppPendingIntent = PendingIntent.getActivity(
+                context,
+                9999,
+                openAppIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notification = NotificationCompat.Builder(context, CHANNEL_TASK_REMINDERS)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("🎯 Focus Session Finished!")
+                .setContentText("Completed: $taskTitle. Great work staying focused!")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setAutoCancel(true)
+                .setVibrate(longArrayOf(0, 350, 150, 350, 150, 500))
+                .setContentIntent(openAppPendingIntent)
+                .build()
+
+            notificationManager.notify(9999, notification)
+        } catch (_: Exception) {}
     }
 }

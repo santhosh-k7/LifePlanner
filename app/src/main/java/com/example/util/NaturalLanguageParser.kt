@@ -38,7 +38,7 @@ object NaturalLanguageParser {
             return ParsedTaskDraft(
                 rawInput = "",
                 title = "",
-                dueDate = baseDate.toString(),
+                dueDate = DateTimeUtils.formatDate(baseDate),
                 dueTime = null,
                 priority = Priority.MEDIUM,
                 categoryId = "personal",
@@ -217,7 +217,7 @@ object NaturalLanguageParser {
         return ParsedTaskDraft(
             rawInput = input,
             title = cleanedTitle,
-            dueDate = detectedDate.toString(),
+            dueDate = DateTimeUtils.formatDate(detectedDate),
             dueTime = detectedTime,
             priority = detectedPriority,
             categoryId = detectedCategory,

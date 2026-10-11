@@ -43,6 +43,7 @@ fun TaskDetailDialog(
     var notes by remember { mutableStateOf(task.notes) }
     var dueDate by remember { mutableStateOf(task.dueDate) }
     var dueTime by remember { mutableStateOf(task.dueTime ?: "") }
+    var medium by remember { mutableStateOf(task.medium) }
     var durationMin by remember { mutableIntStateOf(task.durationMin) }
     var priority by remember { mutableStateOf(task.priority) }
     var categoryId by remember { mutableStateOf(task.categoryId) }
@@ -119,7 +120,7 @@ fun TaskDetailDialog(
                         OutlinedTextField(
                             value = dueDate,
                             onValueChange = { dueDate = it },
-                            label = { Text("Due Date (YYYY-MM-DD)", fontSize = 12.sp) },
+                            label = { Text("Due Date (dd-MM-yyyy)", fontSize = 12.sp) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
                             leadingIcon = { Icon(Icons.Outlined.CalendarToday, contentDescription = null, modifier = Modifier.size(16.dp)) }
@@ -135,7 +136,32 @@ fun TaskDetailDialog(
                         )
                     }
 
-                    // Notification & Alarm Selector (User Request 6: Select 10m before, on time, 30m before, etc.)
+                    // Medium Row
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Medium",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            listOf(
+                                "Online", "In-Person", "Phone Call", "Zoom / Meet", "Desk Work", "Reading", "Coding", "Other"
+                            ).forEach { item ->
+                                FilterChip(
+                                    selected = medium.equals(item, ignoreCase = true),
+                                    onClick = { medium = item },
+                                    label = { Text(item, fontSize = 11.sp) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Notification Selector
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -146,7 +172,7 @@ fun TaskDetailDialog(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Notification & Alarm Reminder",
+                                text = "Notification Reminder",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -161,7 +187,7 @@ fun TaskDetailDialog(
                             modifier = Modifier.padding(top = 2.dp)
                         ) {
                             listOf(
-                                null to "None",
+                                null to "Default (7:00 AM on task day)",
                                 0 to "At event time",
                                 10 to "10 mins before",
                                 30 to "30 mins before",
@@ -388,10 +414,12 @@ fun TaskDetailDialog(
                                     durationMin = durationMin,
                                     priority = priority,
                                     categoryId = categoryId,
+                                    medium = medium.trim(),
                                     repeatRule = repeatRule,
                                     reminderOffsetMin = reminderOffsetMin
                                 )
                             )
+                            onDismiss()
                         }
                     ) {
                         Text("Save")

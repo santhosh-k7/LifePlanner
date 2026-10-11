@@ -14,6 +14,7 @@ import com.example.data.repository.LifePlannerRepository
 import com.example.util.AlarmScheduler
 import com.example.util.DateTimeUtils
 import com.example.util.NaturalLanguageParser
+import com.example.util.NotificationHelper
 import com.example.util.ParsedTaskDraft
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -23,9 +24,19 @@ import java.time.LocalDate
 
 enum class AppTab(val title: String) {
     TODAY("Today"),
+    NOTEPAD("Notepad"),
+    LEETCODE("LeetCode"),
     UPCOMING("Upcoming"),
     ROUTINES("Routines"),
     REVIEW("Review")
+}
+
+enum class NoteFilter(val label: String) {
+    ALL("All Notes"),
+    URGENT_IMPORTANT("🚨 Urgent & Important"),
+    URGENT("⚡ Urgent"),
+    IMPORTANT("⭐ Important"),
+    PINNED("📌 Pinned")
 }
 
 enum class PomodoroPhase(val title: String, val defaultMinutes: Int) {
@@ -46,7 +57,9 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
             routineDao = db.routineDao(),
             habitDao = db.habitDao(),
             reviewDao = db.reviewDao(),
-            focusDao = db.focusDao()
+            focusDao = db.focusDao(),
+            noteDao = db.noteDao(),
+            leetCodeDao = db.leetCodeDao()
         )
     }
 
@@ -70,9 +83,22 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
     val allHabits = repository.allHabits.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val allReviews = repository.allReviews.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val totalFocusSeconds = repository.totalFocusSeconds.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+    val allNotes = repository.allNotes.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allLeetCodeProblems = repository.allLeetCodeProblems.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Quick Add
+    // Notepad State
+    val selectedNoteFilter = MutableStateFlow(NoteFilter.ALL)
+    val noteSearchQuery = MutableStateFlow("")
+    val editingNote = MutableStateFlow<Note?>(null)
+    val showAddEditNoteSheet = MutableStateFlow(false)
+
+    // LeetCode State
+    val showLogLeetCodeSheet = MutableStateFlow(false)
+
+    // Quick Add & Complete Task Creation Page
     val showQuickAdd = MutableStateFlow(false)
+    val showCreateTaskDialog = MutableStateFlow(false)
+    val createTaskInitialDate = MutableStateFlow<String?>(null)
     val quickAddInput = MutableStateFlow("")
     val quickAddDraft = MutableStateFlow(NaturalLanguageParser.parse(""))
     val quickAddOverrideDate = MutableStateFlow<String?>(null)
@@ -158,6 +184,56 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
         quickAddDraft.value = parsed
         quickAddOverrideReminderOffset.value = parsed.reminderOffsetMin
         showQuickAdd.value = true
+    }
+
+    // Complete Task Filling Page (User Request: Plus symbol opens full task form)
+    fun openCreateTask(initialDate: String? = null) {
+        createTaskInitialDate.value = initialDate ?: DateTimeUtils.todayStr()
+        showCreateTaskDialog.value = true
+    }
+
+    fun closeCreateTask() {
+        showCreateTaskDialog.value = false
+        createTaskInitialDate.value = null
+    }
+
+    fun createFullTask(
+        title: String,
+        notes: String,
+        dueDate: String,
+        dueTime: String?,
+        durationMin: Int,
+        priority: Priority,
+        categoryId: String,
+        medium: String,
+        reminderOffsetMin: Int?,
+        repeatRule: RepeatRule,
+        subtaskTitles: List<String>
+    ) {
+        viewModelScope.launch {
+            val taskToInsert = Task(
+                title = title.trim(),
+                notes = notes.trim(),
+                dueDate = dueDate.trim(),
+                dueTime = dueTime?.trim()?.ifBlank { null },
+                durationMin = durationMin,
+                priority = priority,
+                categoryId = categoryId,
+                medium = medium.trim(),
+                repeatRule = repeatRule,
+                reminderOffsetMin = reminderOffsetMin
+            )
+            val newId = repository.insertTask(taskToInsert)
+            subtaskTitles.forEach { stTitle ->
+                if (stTitle.isNotBlank()) {
+                    repository.addSubtask(newId, stTitle.trim())
+                }
+            }
+            AlarmScheduler.scheduleTaskAlarm(getApplication<Application>(), taskToInsert.copy(id = newId))
+            performHapticFeedback()
+            showCreateTaskDialog.value = false
+            createTaskInitialDate.value = null
+        }
     }
 
     fun submitQuickAdd(stayOpen: Boolean = false) {
@@ -478,6 +554,8 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     private fun onFocusTimerFinished() {
+        val taskTitle = focusTask.value?.title ?: "Deep Focus Session"
+        NotificationHelper.triggerFocusTimerCompletedAlert(getApplication(), taskTitle)
         performHapticFeedback()
         val phase = focusPhase.value
         val spentSeconds = timerTotalSeconds.value
@@ -617,6 +695,114 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
             weeklyPriority1.value = ""
             weeklyPriority2.value = ""
             weeklyPriority3.value = ""
+            performHapticFeedback()
+        }
+    }
+
+    // Notepad Actions
+    fun openAddNote() {
+        editingNote.value = null
+        showAddEditNoteSheet.value = true
+    }
+
+    fun openEditNote(note: Note) {
+        editingNote.value = note
+        showAddEditNoteSheet.value = true
+    }
+
+    fun saveNote(
+        title: String,
+        content: String,
+        isUrgent: Boolean,
+        isImportant: Boolean,
+        isPinned: Boolean,
+        tag: String,
+        colorHex: Long
+    ) {
+        if (title.isBlank() && content.isBlank()) return
+        viewModelScope.launch {
+            val existing = editingNote.value
+            if (existing != null) {
+                repository.updateNote(
+                    existing.copy(
+                        title = title.trim(),
+                        content = content.trim(),
+                        isUrgent = isUrgent,
+                        isImportant = isImportant,
+                        isPinned = isPinned,
+                        tag = tag.trim(),
+                        colorHex = colorHex,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                )
+            } else {
+                repository.insertNote(
+                    Note(
+                        title = title.trim(),
+                        content = content.trim(),
+                        isUrgent = isUrgent,
+                        isImportant = isImportant,
+                        isPinned = isPinned,
+                        tag = tag.trim(),
+                        colorHex = colorHex
+                    )
+                )
+            }
+            performHapticFeedback()
+            showAddEditNoteSheet.value = false
+            editingNote.value = null
+        }
+    }
+
+    fun togglePinNote(noteId: Long) {
+        viewModelScope.launch {
+            repository.togglePinNote(noteId)
+            performHapticFeedback()
+        }
+    }
+
+    fun deleteNote(note: Note) {
+        viewModelScope.launch {
+            repository.deleteNote(note)
+            performHapticFeedback()
+        }
+    }
+
+    // LeetCode Actions
+    fun openLogLeetCode() {
+        showLogLeetCodeSheet.value = true
+    }
+
+    fun logLeetCodeProblem(
+        title: String,
+        problemNumber: Int?,
+        difficulty: String,
+        topic: String,
+        notes: String,
+        timeSpentMinutes: Int,
+        dateSolved: String = DateTimeUtils.todayStr()
+    ) {
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            repository.insertLeetCodeProblem(
+                LeetCodeProblem(
+                    title = title.trim(),
+                    problemNumber = problemNumber,
+                    difficulty = difficulty,
+                    topic = topic.trim(),
+                    notes = notes.trim(),
+                    timeSpentMinutes = timeSpentMinutes,
+                    dateSolved = dateSolved
+                )
+            )
+            performHapticFeedback()
+            showLogLeetCodeSheet.value = false
+        }
+    }
+
+    fun deleteLeetCodeProblem(problem: LeetCodeProblem) {
+        viewModelScope.launch {
+            repository.deleteLeetCodeProblem(problem)
             performHapticFeedback()
         }
     }
