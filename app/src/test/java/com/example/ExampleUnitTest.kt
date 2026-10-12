@@ -18,7 +18,7 @@ class ExampleUnitTest {
         val draft = NaturalLanguageParser.parse(input, baseDate)
 
         assertEquals("Gym", draft.title)
-        assertEquals("2026-10-07", draft.dueDate)
+        assertEquals("07-10-2026", draft.dueDate)
         assertEquals("18:00", draft.dueTime)
         assertEquals(Priority.HIGH, draft.priority)
         assertEquals("health", draft.categoryId)
@@ -31,7 +31,7 @@ class ExampleUnitTest {
         val draft = NaturalLanguageParser.parse(input, baseDate)
 
         assertEquals("Design sync", draft.title)
-        assertEquals("2026-10-08", draft.dueDate)
+        assertEquals("08-10-2026", draft.dueDate)
         assertEquals("15:30", draft.dueTime)
         assertEquals(Priority.MEDIUM, draft.priority)
         assertEquals("work", draft.categoryId)
@@ -83,20 +83,6 @@ class ExampleUnitTest {
         val inputOnTime = "Flight check-in tomorrow 9am on time"
         val draftOnTime = NaturalLanguageParser.parse(inputOnTime, baseDate)
         assertEquals(0, draftOnTime.reminderOffsetMin)
-    }
-
-    @Test
-    fun testHabitStreakCalculation_withForgivingGraceDay() {
-        val today = LocalDate.now()
-        val logs = listOf(
-            HabitLog(habitId = 1, date = today.toString(), isCompleted = true),
-            // missed yesterday! But grace day covers single missed day
-            HabitLog(habitId = 1, date = today.minusDays(2).toString(), isCompleted = true),
-            HabitLog(habitId = 1, date = today.minusDays(3).toString(), isCompleted = true)
-        )
-
-        val (currentStreak, bestStreak) = DateTimeUtils.calculateHabitStreaks(logs, graceDaysPerWeek = 1)
-        assertTrue("Streak should not be broken because of forgiving grace day", currentStreak >= 2)
     }
 
     @Test

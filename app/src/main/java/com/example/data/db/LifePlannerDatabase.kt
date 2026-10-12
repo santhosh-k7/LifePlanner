@@ -13,6 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+typealias AppDatabase = LifePlannerDatabase
+
 @Database(
     entities = [
         Task::class,
@@ -31,7 +33,6 @@ import java.time.LocalDate
     exportSchema = false
 )
 abstract class LifePlannerDatabase : RoomDatabase() {
-
     abstract fun taskDao(): TaskDao
     abstract fun routineDao(): RoutineDao
     abstract fun habitDao(): HabitDao

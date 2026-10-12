@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.db.LifePlannerDatabase
 import com.example.data.model.*
 import com.example.data.repository.LifePlannerRepository
+import com.example.data.repository.TaskRepository
 import com.example.util.AlarmScheduler
 import com.example.util.DateTimeUtils
 import com.example.util.NaturalLanguageParser
@@ -49,6 +50,9 @@ enum class PomodoroPhase(val title: String, val defaultMinutes: Int) {
 class LifePlannerViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: LifePlannerRepository
+
+    val taskRepository: TaskRepository
+        get() = repository.taskRepository
 
     init {
         val db = LifePlannerDatabase.getDatabase(application)

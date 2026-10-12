@@ -15,10 +15,13 @@ class LifePlannerRepository(
     private val noteDao: NoteDao,
     private val leetCodeDao: LeetCodeDao
 ) {
-    val allTasks: Flow<List<TaskWithSubtasks>> = taskDao.getAllTasks()
-    val todayTasks: Flow<List<TaskWithSubtasks>> = taskDao.getTasksForDate(DateTimeUtils.todayStr())
-    val overdueTasks: Flow<List<TaskWithSubtasks>> = taskDao.getOverdueTasks(DateTimeUtils.todayStr())
-    val upcomingTasks: Flow<List<TaskWithSubtasks>> = taskDao.getUpcomingTasks(DateTimeUtils.todayStr())
+    val taskRepository = TaskRepository(taskDao)
+
+    val allTasks: Flow<List<TaskWithSubtasks>> = taskRepository.allTasks
+    val allRawTasks: Flow<List<Task>> = taskRepository.allRawTasks
+    val todayTasks: Flow<List<TaskWithSubtasks>> = taskRepository.todayTasks
+    val overdueTasks: Flow<List<TaskWithSubtasks>> = taskRepository.overdueTasks
+    val upcomingTasks: Flow<List<TaskWithSubtasks>> = taskRepository.upcomingTasks
 
     val allRoutines: Flow<List<RoutineWithSteps>> = routineDao.getAllRoutines()
     val allHabits: Flow<List<HabitWithLogs>> = habitDao.getAllHabits()
@@ -29,58 +32,38 @@ class LifePlannerRepository(
     val urgentImportantNotes: Flow<List<Note>> = noteDao.getUrgentImportantNotes()
     val allLeetCodeProblems: Flow<List<LeetCodeProblem>> = leetCodeDao.getAllProblems()
 
-    fun getTasksForDate(date: String): Flow<List<TaskWithSubtasks>> = taskDao.getTasksForDate(date)
+    fun getTasksForDate(date: String): Flow<List<TaskWithSubtasks>> = taskRepository.getTasksForDate(date)
+    fun getRawTasksForDate(date: String): Flow<List<Task>> = taskRepository.getRawTasksForDate(date)
+    fun getTaskById(id: Long): Flow<TaskWithSubtasks?> = taskRepository.getTaskById(id)
+    fun getRawTaskById(id: Long): Flow<Task?> = taskRepository.getRawTaskById(id)
 
-    suspend fun insertTask(task: Task, subtaskTitles: List<String> = emptyList()): Long {
-        val taskId = taskDao.insertTask(task)
-        subtaskTitles.forEachIndexed { index, title ->
-            if (title.isNotBlank()) {
-                taskDao.insertSubtask(
-                    Subtask(
-                        taskId = taskId,
-                        title = title.trim(),
-                        isDone = false,
-                        orderIndex = index
-                    )
-                )
-            }
-        }
-        return taskId
-    }
+    suspend fun insertTask(task: Task, subtaskTitles: List<String> = emptyList()): Long =
+        taskRepository.insertTask(task, subtaskTitles)
 
-    suspend fun updateTask(task: Task) = taskDao.updateTask(task)
+    suspend fun updateTask(task: Task) = taskRepository.updateTask(task)
 
-    suspend fun deleteTask(taskId: Long) = taskDao.deleteTaskById(taskId)
+    suspend fun deleteTask(taskId: Long) = taskRepository.deleteTaskById(taskId)
 
-    suspend fun toggleTaskCompleted(taskId: Long, currentCompleted: Boolean) {
-        val newStatus = !currentCompleted
-        val completedAt = if (newStatus) System.currentTimeMillis() else null
-        taskDao.setTaskCompleted(taskId, newStatus, completedAt)
-    }
+    suspend fun toggleTaskCompleted(taskId: Long, currentCompleted: Boolean) =
+        taskRepository.toggleTaskCompleted(taskId, currentCompleted)
 
-    suspend fun rescheduleTask(taskId: Long, newDate: String) {
-        taskDao.rescheduleTask(taskId, newDate)
-    }
+    suspend fun rescheduleTask(taskId: Long, newDate: String) =
+        taskRepository.rescheduleTask(taskId, newDate)
 
-    suspend fun moveAllOverdueToToday() {
-        taskDao.moveOverdueToToday(DateTimeUtils.todayStr())
-    }
+    suspend fun moveAllOverdueToToday() =
+        taskRepository.moveAllOverdueToToday()
 
-    suspend fun addFocusMinutes(taskId: Long, minutes: Int) {
-        taskDao.addFocusMinutes(taskId, minutes)
-    }
+    suspend fun addFocusMinutes(taskId: Long, minutes: Int) =
+        taskRepository.addFocusMinutes(taskId, minutes)
 
-    suspend fun addSubtask(taskId: Long, title: String) {
-        taskDao.insertSubtask(Subtask(taskId = taskId, title = title.trim()))
-    }
+    suspend fun addSubtask(taskId: Long, title: String) =
+        taskRepository.addSubtask(taskId, title)
 
-    suspend fun toggleSubtask(subtaskId: Long, currentDone: Boolean) {
-        taskDao.setSubtaskDone(subtaskId, !currentDone)
-    }
+    suspend fun toggleSubtask(subtaskId: Long, currentDone: Boolean) =
+        taskRepository.toggleSubtask(subtaskId, currentDone)
 
-    suspend fun deleteSubtask(subtask: Subtask) {
-        taskDao.deleteSubtask(subtask)
-    }
+    suspend fun deleteSubtask(subtask: Subtask) =
+        taskRepository.deleteSubtask(subtask)
 
     // Routines
     suspend fun insertRoutine(routine: Routine, stepTitles: List<Pair<String, Int>> = emptyList()): Long {

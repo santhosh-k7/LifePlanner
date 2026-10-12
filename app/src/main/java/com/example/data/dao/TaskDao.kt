@@ -13,9 +13,15 @@ interface TaskDao {
     @Query("SELECT * FROM tasks ORDER BY dueDate ASC, orderIndex ASC, id DESC")
     fun getAllTasks(): Flow<List<TaskWithSubtasks>>
 
+    @Query("SELECT * FROM tasks ORDER BY dueDate ASC, orderIndex ASC, id DESC")
+    fun getAllRawTasks(): Flow<List<Task>>
+
     @Transaction
     @Query("SELECT * FROM tasks WHERE dueDate = :date ORDER BY isCompleted ASC, priority DESC, dueTime ASC, id DESC")
     fun getTasksForDate(date: String): Flow<List<TaskWithSubtasks>>
+
+    @Query("SELECT * FROM tasks WHERE dueDate = :date ORDER BY isCompleted ASC, priority DESC, dueTime ASC, id DESC")
+    fun getRawTasksForDate(date: String): Flow<List<Task>>
 
     @Transaction
     @Query("SELECT * FROM tasks WHERE dueDate < :todayDate AND isCompleted = 0 ORDER BY dueDate ASC, priority DESC")
@@ -29,8 +35,17 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
     fun getTaskById(id: Long): Flow<TaskWithSubtasks?>
 
+    @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
+    fun getRawTaskById(id: Long): Flow<Task?>
+
+    @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
+    suspend fun getTaskByIdDirect(id: Long): Task?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTask(task: Task): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTasks(tasks: List<Task>): List<Long>
 
     @Update
     suspend fun updateTask(task: Task)
