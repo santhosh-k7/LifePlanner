@@ -43,12 +43,11 @@ fun TaskDetailDialog(
     var notes by remember { mutableStateOf(task.notes) }
     var dueDate by remember { mutableStateOf(task.dueDate) }
     var dueTime by remember { mutableStateOf(task.dueTime ?: "") }
-    var medium by remember { mutableStateOf(task.medium) }
     var durationMin by remember { mutableIntStateOf(task.durationMin) }
     var priority by remember { mutableStateOf(task.priority) }
     var categoryId by remember { mutableStateOf(task.categoryId) }
     var repeatRule by remember { mutableStateOf(task.repeatRule) }
-    var reminderOffsetMin by remember { mutableStateOf<Int?>(task.reminderOffsetMin) }
+    var selectedReminderOffsets by remember { mutableStateOf(task.getReminderOffsetList().toSet()) }
 
     var newSubtaskText by remember { mutableStateOf("") }
 
@@ -136,45 +135,60 @@ fun TaskDetailDialog(
                         )
                     }
 
-                    // Medium Row
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = "Medium",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        @OptIn(ExperimentalLayoutApi::class)
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(top = 4.dp)
-                        ) {
-                            listOf(
-                                "Online", "In-Person", "Phone Call", "Zoom / Meet", "Desk Work", "Reading", "Coding", "Other"
-                            ).forEach { item ->
-                                FilterChip(
-                                    selected = medium.equals(item, ignoreCase = true),
-                                    onClick = { medium = item },
-                                    label = { Text(item, fontSize = 11.sp) }
-                                )
-                            }
-                        }
-                    }
-
-                    // Notification Selector
+                    // Multi-notification Selector for Events & Tasks
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Outlined.NotificationsActive,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
-                                tint = if (reminderOffsetMin != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                                tint = if (selectedReminderOffsets.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Notification Reminder",
+                                text = "Event & Task Notifications",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Text(
+                            text = "Select multiple notification timings (before event and at time of event).",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Quick Combos
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            FilterChip(
+                                selected = selectedReminderOffsets == setOf(0, 15),
+                                onClick = { selectedReminderOffsets = setOf(0, 15) },
+                                label = { Text("At time & 15m before", fontSize = 11.sp) },
+                                leadingIcon = if (selectedReminderOffsets == setOf(0, 15)) {
+                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                                } else null
+                            )
+                            FilterChip(
+                                selected = selectedReminderOffsets == setOf(0, 30),
+                                onClick = { selectedReminderOffsets = setOf(0, 30) },
+                                label = { Text("At time & 30m before", fontSize = 11.sp) },
+                                leadingIcon = if (selectedReminderOffsets == setOf(0, 30)) {
+                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                                } else null
+                            )
+                            FilterChip(
+                                selected = selectedReminderOffsets.isEmpty(),
+                                onClick = { selectedReminderOffsets = emptySet() },
+                                label = { Text("7 AM morning only", fontSize = 11.sp) }
                             )
                         }
 
@@ -187,22 +201,64 @@ fun TaskDetailDialog(
                             modifier = Modifier.padding(top = 2.dp)
                         ) {
                             listOf(
-                                null to "Default (7:00 AM on task day)",
-                                0 to "At event time",
+                                0 to "🔔 At event time",
+                                5 to "5 mins before",
                                 10 to "10 mins before",
+                                15 to "15 mins before",
                                 30 to "30 mins before",
                                 60 to "1 hour before",
+                                120 to "2 hours before",
                                 1440 to "1 day before"
                             ).forEach { (offset, label) ->
+                                val isSelected = selectedReminderOffsets.contains(offset)
                                 FilterChip(
-                                    selected = reminderOffsetMin == offset,
-                                    onClick = { reminderOffsetMin = offset },
-                                    label = { Text(label, fontSize = 12.sp) },
-                                    leadingIcon = if (reminderOffsetMin == offset) {
+                                    selected = isSelected,
+                                    onClick = {
+                                        selectedReminderOffsets = if (isSelected) {
+                                            selectedReminderOffsets - offset
+                                        } else {
+                                            selectedReminderOffsets + offset
+                                        }
+                                    },
+                                    label = { Text(label, fontSize = 11.sp) },
+                                    leadingIcon = if (isSelected) {
                                         { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
                                     } else null
                                 )
                             }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (selectedReminderOffsets.isNotEmpty()) {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (selectedReminderOffsets.isNotEmpty()) {
+                                    val labels = selectedReminderOffsets.sorted().map {
+                                        when (it) {
+                                            0 -> "At event time"
+                                            1440 -> "1d before"
+                                            60 -> "1h before"
+                                            120 -> "2h before"
+                                            else -> "${it}m before"
+                                        }
+                                    }
+                                    "Active (${selectedReminderOffsets.size}): ${labels.joinToString(", ")}"
+                                } else {
+                                    "Default: Morning reminder at 7:00 AM on task day"
+                                },
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (selectedReminderOffsets.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
                         }
                     }
 
@@ -405,6 +461,7 @@ fun TaskDetailDialog(
 
                     Button(
                         onClick = {
+                            val offsetsString = selectedReminderOffsets.sorted().joinToString(",")
                             viewModel.updateTaskDetails(
                                 task.copy(
                                     title = title.trim(),
@@ -414,9 +471,10 @@ fun TaskDetailDialog(
                                     durationMin = durationMin,
                                     priority = priority,
                                     categoryId = categoryId,
-                                    medium = medium.trim(),
+                                    medium = "",
                                     repeatRule = repeatRule,
-                                    reminderOffsetMin = reminderOffsetMin
+                                    reminderOffsetMin = selectedReminderOffsets.firstOrNull(),
+                                    reminderOffsets = offsetsString
                                 )
                             )
                             onDismiss()

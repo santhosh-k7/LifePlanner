@@ -28,7 +28,7 @@ class TaskAlarmReceiver : BroadcastReceiver() {
         const val EXTRA_TASK_CATEGORY = "EXTRA_TASK_CATEGORY"
         const val EXTRA_TASK_PRIORITY = "EXTRA_TASK_PRIORITY"
         const val EXTRA_TASK_DUE_TIME = "EXTRA_TASK_DUE_TIME"
-        const val EXTRA_TASK_MEDIUM = "EXTRA_TASK_MEDIUM"
+        const val EXTRA_OFFSET_MIN = "EXTRA_OFFSET_MIN"
         const val EXTRA_TASK_REPEAT_RULE = "EXTRA_TASK_REPEAT_RULE"
     }
 
@@ -43,7 +43,7 @@ class TaskAlarmReceiver : BroadcastReceiver() {
                 val category = intent.getStringExtra(EXTRA_TASK_CATEGORY) ?: "other"
                 val priorityStr = intent.getStringExtra(EXTRA_TASK_PRIORITY) ?: "MEDIUM"
                 val dueTime = intent.getStringExtra(EXTRA_TASK_DUE_TIME)
-                val medium = intent.getStringExtra(EXTRA_TASK_MEDIUM)
+                val offsetMin = intent.getIntExtra(EXTRA_OFFSET_MIN, -1)
                 val repeatRuleStr = intent.getStringExtra(EXTRA_TASK_REPEAT_RULE) ?: "NONE"
 
                 val priority = try { Priority.valueOf(priorityStr) } catch (_: Exception) { Priority.MEDIUM }
@@ -57,7 +57,7 @@ class TaskAlarmReceiver : BroadcastReceiver() {
                     category = category,
                     priority = priority,
                     dueTime = dueTime,
-                    medium = medium
+                    offsetMin = offsetMin
                 )
 
                 // If repeated according to user, schedule next cycle alarm

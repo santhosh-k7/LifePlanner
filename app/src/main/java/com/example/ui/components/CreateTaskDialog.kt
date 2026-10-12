@@ -50,31 +50,15 @@ fun CreateTaskDialog(
     var notes by remember { mutableStateOf("") }
     var dueDate by remember { mutableStateOf(initialDate ?: DateTimeUtils.todayStr()) }
     var dueTime by remember { mutableStateOf("") }
-    var medium by remember { mutableStateOf("Online") }
     var categoryId by remember { mutableStateOf("work") }
     var priority by remember { mutableStateOf(Priority.MEDIUM) }
-    var reminderOffsetMin by remember { mutableStateOf<Int?>(10) } // Default 10 mins before
+    var selectedReminderOffsets by remember { mutableStateOf(setOf(0, 15)) } // Default: at event time & 15m before
     var durationMin by remember { mutableIntStateOf(30) }
     var repeatRule by remember { mutableStateOf(RepeatRule.NONE) }
 
     // Subtasks
     val subtasks = remember { mutableStateListOf<String>() }
     var newSubtaskText by remember { mutableStateOf("") }
-
-    // Custom medium text toggle
-    var isCustomMedium by remember { mutableStateOf(false) }
-    var customMediumText by remember { mutableStateOf("") }
-
-    val mediumPresets = listOf(
-        "💻 Online",
-        "👥 In-Person",
-        "📞 Phone Call",
-        "🎥 Zoom / Meet",
-        "📝 Desk Work",
-        "📖 Reading / Study",
-        "⚡ Coding",
-        "📦 Other"
-    )
 
     val categoryPresets = listOf(
         Triple("work", "Work", Color(0xFF3B82F6)),
@@ -280,66 +264,7 @@ fun CreateTaskDialog(
                         }
                     }
 
-                    // 3. Medium
-                    LiquidGlassCard(isDark = isDark, modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(14.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Medium",
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "Current: $medium",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                mediumPresets.forEach { item ->
-                                    val cleanName = item.substringAfter(" ")
-                                    val isSelected = (!isCustomMedium && (medium == cleanName || medium == item))
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = {
-                                            isCustomMedium = false
-                                            medium = cleanName
-                                        },
-                                        label = { Text(item, fontSize = 11.sp) },
-                                        leadingIcon = if (isSelected) {
-                                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
-                                        } else null
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-                            OutlinedTextField(
-                                value = if (isCustomMedium) customMediumText else "",
-                                onValueChange = {
-                                    isCustomMedium = true
-                                    customMediumText = it
-                                    medium = it
-                                },
-                                placeholder = { Text("Or type custom medium...", fontSize = 12.sp) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(10.dp),
-                                singleLine = true
-                            )
-                        }
-                    }
-
-                    // 4. Category
+                    // 3. Category
                     LiquidGlassCard(isDark = isDark, modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
@@ -373,7 +298,7 @@ fun CreateTaskDialog(
                         }
                     }
 
-                    // 5. Notification Timing
+                    // 4. Notification Timings (Multi-notification support for events)
                     LiquidGlassCard(isDark = isDark, modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -385,40 +310,134 @@ fun CreateTaskDialog(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Notification Timing",
+                                    text = "Event & Task Notifications",
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Tasks without custom timing receive a 7:00 AM morning notification on task day.",
+                                text = "Select multiple timings: notify before event and at time of event.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline,
                                 fontSize = 11.sp
                             )
                             Spacer(modifier = Modifier.height(8.dp))
 
+                            // Quick Combos
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                FilterChip(
+                                    selected = selectedReminderOffsets == setOf(0, 15),
+                                    onClick = { selectedReminderOffsets = setOf(0, 15) },
+                                    label = { Text("At time & 15m before", fontSize = 11.sp) },
+                                    leadingIcon = if (selectedReminderOffsets == setOf(0, 15)) {
+                                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                                    } else null
+                                )
+                                FilterChip(
+                                    selected = selectedReminderOffsets == setOf(0, 30),
+                                    onClick = { selectedReminderOffsets = setOf(0, 30) },
+                                    label = { Text("At time & 30m before", fontSize = 11.sp) },
+                                    leadingIcon = if (selectedReminderOffsets == setOf(0, 30)) {
+                                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                                    } else null
+                                )
+                                FilterChip(
+                                    selected = selectedReminderOffsets == setOf(0, 15, 60),
+                                    onClick = { selectedReminderOffsets = setOf(0, 15, 60) },
+                                    label = { Text("1h, 15m & At time", fontSize = 11.sp) },
+                                    leadingIcon = if (selectedReminderOffsets == setOf(0, 15, 60)) {
+                                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
+                                    } else null
+                                )
+                                FilterChip(
+                                    selected = selectedReminderOffsets.isEmpty(),
+                                    onClick = { selectedReminderOffsets = emptySet() },
+                                    label = { Text("7 AM morning only", fontSize = 11.sp) }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Multi-select Individual Timing Chips
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 listOf(
-                                    null to "Default (7:00 AM on task day)",
-                                    0 to "At event time",
+                                    0 to "🔔 At event time",
+                                    5 to "5 mins before",
                                     10 to "10 mins before",
+                                    15 to "15 mins before",
                                     30 to "30 mins before",
                                     60 to "1 hour before",
+                                    120 to "2 hours before",
                                     1440 to "1 day before"
                                 ).forEach { (offset, label) ->
-                                    val isSelected = reminderOffsetMin == offset
+                                    val isSelected = selectedReminderOffsets.contains(offset)
                                     FilterChip(
                                         selected = isSelected,
-                                        onClick = { reminderOffsetMin = offset },
+                                        onClick = {
+                                            selectedReminderOffsets = if (isSelected) {
+                                                selectedReminderOffsets - offset
+                                            } else {
+                                                selectedReminderOffsets + offset
+                                            }
+                                        },
                                         label = { Text(label, fontSize = 11.sp) },
                                         leadingIcon = if (isSelected) {
                                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
                                         } else null
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Status Summary Banner
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (selectedReminderOffsets.isNotEmpty()) {
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = if (selectedReminderOffsets.isNotEmpty()) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationsNone,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = if (selectedReminderOffsets.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (selectedReminderOffsets.isNotEmpty()) {
+                                            val labels = selectedReminderOffsets.sorted().map {
+                                                when (it) {
+                                                    0 -> "At event time"
+                                                    1440 -> "1d before"
+                                                    60 -> "1h before"
+                                                    120 -> "2h before"
+                                                    else -> "${it}m before"
+                                                }
+                                            }
+                                            "Active: ${labels.joinToString(", ")}"
+                                        } else {
+                                            "Default: Morning notification at 7:00 AM on task day"
+                                        },
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (selectedReminderOffsets.isNotEmpty()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                                     )
                                 }
                             }
@@ -627,8 +646,7 @@ fun CreateTaskDialog(
                                 durationMin = durationMin,
                                 priority = priority,
                                 categoryId = categoryId,
-                                medium = medium,
-                                reminderOffsetMin = reminderOffsetMin,
+                                reminderOffsets = selectedReminderOffsets.sorted(),
                                 repeatRule = repeatRule,
                                 subtaskTitles = subtasks.toList()
                             )

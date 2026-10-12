@@ -185,31 +185,16 @@ fun TaskRowItem(
                         }
                     }
 
-                    // Medium badge
-                    if (task.medium.isNotBlank()) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                text = task.medium,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-
                     // Notification indicator badge
-                    if (task.reminderOffsetMin != null) {
+                    val reminderOffsets = task.getReminderOffsetList()
+                    if (reminderOffsets.isNotEmpty()) {
                         Surface(
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Notifications,
@@ -217,18 +202,22 @@ fun TaskRowItem(
                                     modifier = Modifier.size(11.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text(
-                                    text = when (task.reminderOffsetMin) {
-                                        0 -> "On time"
-                                        10 -> "10m before"
-                                        30 -> "30m before"
-                                        60 -> "1h before"
+                                Spacer(modifier = Modifier.width(3.dp))
+                                val notifText = when {
+                                    reminderOffsets.size == 1 -> when (reminderOffsets.first()) {
+                                        0 -> "At time"
                                         1440 -> "1d before"
-                                        else -> "${task.reminderOffsetMin}m"
-                                    },
+                                        60 -> "1h before"
+                                        else -> "${reminderOffsets.first()}m before"
+                                    }
+                                    reminderOffsets.contains(0) && reminderOffsets.contains(15) -> "At time & 15m"
+                                    reminderOffsets.contains(0) && reminderOffsets.contains(30) -> "At time & 30m"
+                                    else -> "${reminderOffsets.size} reminders"
+                                }
+                                Text(
+                                    text = notifText,
                                     fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }

@@ -40,6 +40,7 @@ fun QuickAddBottomSheet(
     val overridePriority by viewModel.quickAddOverridePriority.collectAsState()
     val overrideCategory by viewModel.quickAddOverrideCategory.collectAsState()
     val reminderOffset by viewModel.quickAddOverrideReminderOffset.collectAsState()
+    val reminderOffsets by viewModel.quickAddReminderOffsets.collectAsState()
 
     val focusRequester = remember { FocusRequester() }
 
@@ -116,13 +117,13 @@ fun QuickAddBottomSheet(
                 // Detected Date Chip
                 AssistChip(
                     onClick = {
-                        val current = LocalDate.parse(effectiveDate)
+                        val current = DateTimeUtils.parseDate(effectiveDate)
                         val next = if (current == LocalDate.now()) {
                             LocalDate.now().plusDays(1)
                         } else {
                             LocalDate.now()
                         }
-                        viewModel.quickAddOverrideDate.value = next.toString()
+                        viewModel.quickAddOverrideDate.value = DateTimeUtils.formatDate(next)
                     },
                     label = {
                         Text(
@@ -226,7 +227,7 @@ fun QuickAddBottomSheet(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Notification / Alarm Reminder Selector (User Request 6: 10 mins before, on time, 30 mins before, etc.)
+            // Notification Reminder Selector (Multi-timing support for events/tasks)
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -234,27 +235,28 @@ fun QuickAddBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.NotificationsActive,
-                        contentDescription = "Notification Alarm",
+                        contentDescription = "Notification",
                         modifier = Modifier.size(16.dp),
-                        tint = if (reminderOffset != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                        tint = if (reminderOffsets.isNotEmpty() || reminderOffset != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Notification & Alarm:",
+                        text = "Notifications:",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    if (reminderOffset != null) {
+                    if (reminderOffsets.isNotEmpty()) {
                         Spacer(modifier = Modifier.width(6.dp))
+                        val labelSummary = reminderOffsets.sorted().map {
+                            when (it) {
+                                0 -> "At time"
+                                1440 -> "1d before"
+                                60 -> "1h before"
+                                else -> "${it}m before"
+                            }
+                        }.joinToString(", ")
                         Text(
-                            text = when (reminderOffset) {
-                                0 -> "At event time"
-                                10 -> "10 mins before"
-                                30 -> "30 mins before"
-                                60 -> "1 hour before"
-                                1440 -> "1 day before"
-                                else -> "${reminderOffset}m before"
-                            },
+                            text = labelSummary,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -268,22 +270,34 @@ fun QuickAddBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     listOf(
-                        null to "None",
                         0 to "At event time",
-                        10 to "10m before",
+                        15 to "15m before",
                         30 to "30m before",
                         60 to "1h before",
                         1440 to "1d before"
                     ).forEach { (offset, label) ->
+                        val isSelected = reminderOffsets.contains(offset)
                         FilterChip(
-                            selected = reminderOffset == offset,
-                            onClick = { viewModel.quickAddOverrideReminderOffset.value = offset },
+                            selected = isSelected,
+                            onClick = {
+                                viewModel.quickAddReminderOffsets.value = if (isSelected) {
+                                    reminderOffsets - offset
+                                } else {
+                                    reminderOffsets + offset
+                                }
+                            },
                             label = { Text(label, fontSize = 11.sp) },
-                            leadingIcon = if (reminderOffset == offset) {
+                            leadingIcon = if (isSelected) {
                                 { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(12.dp)) }
                             } else null
                         )
                     }
+
+                    FilterChip(
+                        selected = reminderOffsets.isEmpty(),
+                        onClick = { viewModel.quickAddReminderOffsets.value = emptySet() },
+                        label = { Text("7 AM morning only", fontSize = 11.sp) }
+                    )
                 }
             }
 

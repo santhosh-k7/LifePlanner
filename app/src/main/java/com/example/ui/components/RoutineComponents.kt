@@ -154,8 +154,8 @@ fun RoutineCard(
                         ) {
                             Checkbox(
                                 checked = isDone,
-                                onCheckedChange = { onToggleStep(step.id, !isDone) },
-                                modifier = Modifier.size(24.dp)
+                                onCheckedChange = null,
+                                modifier = Modifier.padding(end = 4.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(

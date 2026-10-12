@@ -75,7 +75,11 @@ fun LeetCodeScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp)
+                            ) {
                                 Text(
                                     text = "LeetCode Progress",
                                     style = MaterialTheme.typography.titleLarge.copy(

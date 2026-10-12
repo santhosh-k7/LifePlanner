@@ -74,11 +74,12 @@ object DateTimeUtils {
             val today = today()
             val diff = ChronoUnit.DAYS.between(today, date)
             val formatted = date.format(DATE_FORMATTER_DD_MM_YYYY)
+            val dayOfWeek = date.format(DateTimeFormatter.ofPattern("EEE"))
             when (diff) {
-                0L -> "Today ($formatted)"
-                1L -> "Tomorrow ($formatted)"
-                -1L -> "Yesterday ($formatted)"
-                else -> formatted
+                0L -> "Today, $formatted"
+                1L -> "Tomorrow, $formatted"
+                -1L -> "Yesterday, $formatted"
+                else -> "$dayOfWeek, $formatted"
             }
         } catch (e: Exception) {
             dateStr

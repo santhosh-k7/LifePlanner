@@ -109,6 +109,7 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
     val quickAddOverridePriority = MutableStateFlow<Priority?>(null)
     val quickAddOverrideCategory = MutableStateFlow<String?>(null)
     val quickAddOverrideReminderOffset = MutableStateFlow<Int?>(null)
+    val quickAddReminderOffsets = MutableStateFlow<Set<Int>>(setOf(0, 15)) // Multi-notification support (at time & 15m before)
 
     // Task Detail
     val selectedTaskForDetail = MutableStateFlow<TaskWithSubtasks?>(null)
@@ -209,12 +210,15 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
         durationMin: Int,
         priority: Priority,
         categoryId: String,
-        medium: String,
-        reminderOffsetMin: Int?,
+        medium: String = "",
+        reminderOffsets: List<Int> = emptyList(),
+        reminderOffsetMin: Int? = null,
         repeatRule: RepeatRule,
         subtaskTitles: List<String>
     ) {
         viewModelScope.launch {
+            val offsetsString = reminderOffsets.distinct().sorted().joinToString(",")
+            val primaryOffset = reminderOffsets.firstOrNull() ?: reminderOffsetMin
             val taskToInsert = Task(
                 title = title.trim(),
                 notes = notes.trim(),
@@ -225,7 +229,8 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
                 categoryId = categoryId,
                 medium = medium.trim(),
                 repeatRule = repeatRule,
-                reminderOffsetMin = reminderOffsetMin
+                reminderOffsetMin = primaryOffset,
+                reminderOffsets = offsetsString
             )
             val newId = repository.insertTask(taskToInsert)
             subtaskTitles.forEach { stTitle ->
@@ -250,6 +255,13 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
         val finalPriority = quickAddOverridePriority.value ?: draft.priority
         val finalCategory = quickAddOverrideCategory.value ?: draft.categoryId
         val finalReminderOffset = quickAddOverrideReminderOffset.value ?: draft.reminderOffsetMin
+        val activeOffsets = quickAddReminderOffsets.value
+        val offsetsString = if (activeOffsets.isNotEmpty()) {
+            activeOffsets.sorted().joinToString(",")
+        } else if (finalReminderOffset != null) {
+            "$finalReminderOffset"
+        } else ""
+        val primaryOffset = activeOffsets.firstOrNull() ?: finalReminderOffset
 
         viewModelScope.launch {
             val taskToInsert = Task(
@@ -260,7 +272,8 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
                 priority = finalPriority,
                 categoryId = finalCategory,
                 repeatRule = draft.repeatRule,
-                reminderOffsetMin = finalReminderOffset
+                reminderOffsetMin = primaryOffset,
+                reminderOffsets = offsetsString
             )
             val newId = repository.insertTask(taskToInsert)
             AlarmScheduler.scheduleTaskAlarm(getApplication<Application>(), taskToInsert.copy(id = newId))
@@ -271,10 +284,12 @@ class LifePlannerViewModel(application: Application) : AndroidViewModel(applicat
                 quickAddOverridePriority.value = null
                 quickAddOverrideCategory.value = null
                 quickAddOverrideReminderOffset.value = null
+                quickAddReminderOffsets.value = setOf(0, 15)
             } else {
                 showQuickAdd.value = false
                 quickAddInput.value = ""
                 quickAddOverrideReminderOffset.value = null
+                quickAddReminderOffsets.value = setOf(0, 15)
             }
         }
     }

@@ -229,7 +229,6 @@ fun LifePlannerApp(
         bottomBar = {
             NavigationBar(
                 modifier = Modifier
-                    .navigationBarsPadding()
                     .testTag("main_bottom_nav")
                     .drawBehind {
                         drawLine(
@@ -298,7 +297,7 @@ fun LifePlannerApp(
                     modifier = Modifier.testTag("nav_tab_upcoming")
                 )
 
-                // Tab 5: Routines & Habits
+                // Tab 5: Routines
                 NavigationBarItem(
                     selected = currentTab == AppTab.ROUTINES,
                     onClick = { viewModel.currentTab.value = AppTab.ROUTINES },

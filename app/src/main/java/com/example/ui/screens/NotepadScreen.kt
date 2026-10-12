@@ -143,7 +143,6 @@ fun NotepadScreen(
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp)
                                 .testTag("notepad_search_input"),
                             shape = RoundedCornerShape(16.dp),
                             singleLine = true,

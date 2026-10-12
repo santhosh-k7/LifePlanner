@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.TaskWithSubtasks
@@ -75,104 +76,29 @@ fun UpcomingScreen(
             .fillMaxSize()
             .testTag("upcoming_screen")
     ) {
-        // Top Header
+        // Top Header Row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                 Text(
                     text = "Calendar & Upcoming",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Full Year $selectedYear View · ${DateTimeUtils.formatDate(selectedDate)}",
+                    text = "Full Year $selectedYear · ${DateTimeUtils.formatDate(selectedDate)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.outline,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-            }
-
-            // View Mode Selector
-            SingleChoiceSegmentedButtonRow {
-                SegmentedButton(
-                    selected = calendarViewMode == 0,
-                    onClick = { calendarViewMode = 0 },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
-                    icon = {}
-                ) {
-                    Icon(Icons.Outlined.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Month", fontSize = 11.sp)
-                }
-
-                SegmentedButton(
-                    selected = calendarViewMode == 1,
-                    onClick = { calendarViewMode = 1 },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
-                    icon = {}
-                ) {
-                    Icon(Icons.Outlined.ViewModule, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Year", fontSize = 11.sp)
-                }
-
-                SegmentedButton(
-                    selected = calendarViewMode == 2,
-                    onClick = { calendarViewMode = 2 },
-                    shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
-                    icon = {}
-                ) {
-                    Icon(Icons.Outlined.ViewDay, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("List", fontSize = 11.sp)
-                }
-            }
-        }
-
-        // Year Navigator Strip (< 2026 >)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = {
-                        selectedYear -= 1
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Year", modifier = Modifier.size(18.dp))
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFF6366F1).copy(alpha = 0.15f),
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                ) {
-                    Text(
-                        text = "$selectedYear",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6366F1),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = {
-                        selectedYear += 1
-                    },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Year", modifier = Modifier.size(18.dp))
-                }
             }
 
             // Quick button to jump to today
@@ -182,10 +108,97 @@ fun UpcomingScreen(
                     selectedMonth = today.monthValue
                     selectedDate = today
                 },
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(10.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Today (${DateTimeUtils.formatDate(today)})", fontSize = 11.sp)
+                Icon(
+                    imageVector = Icons.Outlined.Event,
+                    contentDescription = "Jump to Today",
+                    modifier = Modifier.size(15.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Today", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
+
+        // View Mode Selector (Dedicated row with full width - perfect for Android phones)
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp)
+        ) {
+            SegmentedButton(
+                selected = calendarViewMode == 0,
+                onClick = { calendarViewMode = 0 },
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3),
+                icon = {}
+            ) {
+                Icon(Icons.Outlined.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Month", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
+
+            SegmentedButton(
+                selected = calendarViewMode == 1,
+                onClick = { calendarViewMode = 1 },
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3),
+                icon = {}
+            ) {
+                Icon(Icons.Outlined.ViewModule, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Year Grid", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
+
+            SegmentedButton(
+                selected = calendarViewMode == 2,
+                onClick = { calendarViewMode = 2 },
+                shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3),
+                icon = {}
+            ) {
+                Icon(Icons.Outlined.ViewDay, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("List", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+
+        // Year Navigator Strip (< 2026 >)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = {
+                    selectedYear -= 1
+                },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous Year", modifier = Modifier.size(18.dp))
+            }
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFF6366F1).copy(alpha = 0.15f),
+                modifier = Modifier.padding(horizontal = 8.dp)
+            ) {
+                Text(
+                    text = "$selectedYear",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF6366F1),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp)
+                )
+            }
+
+            IconButton(
+                onClick = {
+                    selectedYear += 1
+                },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next Year", modifier = Modifier.size(18.dp))
             }
         }
 
@@ -365,17 +378,21 @@ private fun MonthCalendarView(
                     // Weekday Names Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         listOf("M", "T", "W", "T", "F", "S", "S").forEach { dayLabel ->
-                            Text(
-                                text = dayLabel,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.width(36.dp),
-                                textAlign = TextAlign.Center
-                            )
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = dayLabel,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
                     }
 
@@ -394,61 +411,66 @@ private fun MonthCalendarView(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 3.dp),
-                            horizontalArrangement = Arrangement.SpaceAround
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             for (col in 0 until 7) {
                                 val cellIdx = row * 7 + col
                                 val dayNum = cellIdx - startOffset + 1
 
-                                if (dayNum in 1..daysInMonth) {
-                                    val cellDate = LocalDate.of(year, month, dayNum)
-                                    val isSelected = cellDate == selectedDate
-                                    val isCurrentDay = cellDate == today
-                                    val tasksOnDay = allTasks.filter {
-                                        val td = DateTimeUtils.parseDate(it.task.dueDate)
-                                        td == cellDate
-                                    }
-                                    val uncompletedCount = tasksOnDay.count { !it.task.isCompleted }
+                                Box(
+                                    modifier = Modifier.weight(1f),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (dayNum in 1..daysInMonth) {
+                                        val cellDate = LocalDate.of(year, month, dayNum)
+                                        val isSelected = cellDate == selectedDate
+                                        val isCurrentDay = cellDate == today
+                                        val tasksOnDay = allTasks.filter {
+                                            val td = DateTimeUtils.parseDate(it.task.dueDate)
+                                            td == cellDate
+                                        }
+                                        val uncompletedCount = tasksOnDay.count { !it.task.isCompleted }
 
-                                    Box(
-                                        modifier = Modifier
-                                            .size(38.dp)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .then(
-                                                when {
-                                                    isSelected -> Modifier.background(Color(0xFF6366F1))
-                                                    isCurrentDay -> Modifier.border(1.5.dp, Color(0xFF6366F1), RoundedCornerShape(10.dp))
-                                                    else -> Modifier
-                                                }
-                                            )
-                                            .clickable { onDateSelect(cellDate) },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.Center
-                                        ) {
-                                            Text(
-                                                text = "$dayNum",
-                                                fontSize = 13.sp,
-                                                fontWeight = if (isSelected || isCurrentDay) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
-                                            )
-
-                                            // Task dot indicator
-                                            if (uncompletedCount > 0) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(4.dp)
-                                                        .clip(CircleShape)
-                                                        .background(if (isSelected) Color.White else Color(0xFF6366F1))
+                                        Box(
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .then(
+                                                    when {
+                                                        isSelected -> Modifier.background(Color(0xFF6366F1))
+                                                        isCurrentDay -> Modifier.border(1.5.dp, Color(0xFF6366F1), RoundedCornerShape(10.dp))
+                                                        else -> Modifier
+                                                    }
                                                 )
+                                                .clickable { onDateSelect(cellDate) },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
+                                            ) {
+                                                Text(
+                                                    text = "$dayNum",
+                                                    fontSize = 13.sp,
+                                                    fontWeight = if (isSelected || isCurrentDay) FontWeight.Bold else FontWeight.Normal,
+                                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                                )
+
+                                                // Task dot indicator
+                                                if (uncompletedCount > 0) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(4.dp)
+                                                            .clip(CircleShape)
+                                                            .background(if (isSelected) Color.White else Color(0xFF6366F1))
+                                                    )
+                                                }
                                             }
                                         }
+                                    } else {
+                                        // Empty cell
+                                        Spacer(modifier = Modifier.size(36.dp))
                                     }
-                                } else {
-                                    // Empty padding cell
-                                    Spacer(modifier = Modifier.size(38.dp))
                                 }
                             }
                         }
@@ -472,16 +494,24 @@ private fun MonthCalendarView(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                ) {
                     Text(
                         text = "Tasks for $selectedDateStr",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "${tasksForSelected.size} scheduled · ${tasksForSelected.count { it.task.isCompleted }} completed",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.outline,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -607,7 +637,10 @@ private fun YearOverviewGridView(
                                     Text(
                                         text = mName,
                                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f).padding(end = 4.dp)
                                     )
                                     if (uncompleted > 0) {
                                         Surface(

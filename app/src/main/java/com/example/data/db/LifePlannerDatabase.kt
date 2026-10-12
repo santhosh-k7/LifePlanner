@@ -29,7 +29,7 @@ typealias AppDatabase = LifePlannerDatabase
         Note::class,
         LeetCodeProblem::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class LifePlannerDatabase : RoomDatabase() {
@@ -123,8 +123,7 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     dueDate = yesterdayStr,
                     priority = Priority.MEDIUM,
                     categoryId = "health",
-                    medium = "Phone Call",
-                    reminderOffsetMin = 10,
+                    reminderOffsets = "0,15",
                     isCompleted = false
                 )
             )
@@ -139,8 +138,7 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     durationMin = 60,
                     priority = Priority.HIGH,
                     categoryId = "coding",
-                    medium = "Desk Work",
-                    reminderOffsetMin = 10,
+                    reminderOffsets = "0,15", // Event notification at start time and 15 mins before
                     isCompleted = false
                 )
             )
@@ -157,8 +155,7 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     durationMin = 45,
                     priority = Priority.HIGH,
                     categoryId = "work",
-                    medium = "Meeting / Zoom",
-                    reminderOffsetMin = 30,
+                    reminderOffsets = "0,30", // At start time and 30 mins before
                     isCompleted = false
                 )
             )
@@ -172,8 +169,7 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     durationMin = 30,
                     priority = Priority.MEDIUM,
                     categoryId = "health",
-                    medium = "In-Person",
-                    reminderOffsetMin = 0,
+                    reminderOffsets = "0,15",
                     isCompleted = false
                 )
             )
@@ -185,8 +181,7 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     dueDate = todayStr,
                     priority = Priority.LOW,
                     categoryId = "personal",
-                    medium = "In-Person",
-                    reminderOffsetMin = null,
+                    reminderOffsets = "", // Default morning notification
                     isCompleted = false
                 )
             )
@@ -200,8 +195,7 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     durationMin = 15,
                     priority = Priority.MEDIUM,
                     categoryId = "health",
-                    medium = "Desk Work",
-                    reminderOffsetMin = 0,
+                    reminderOffsets = "0",
                     isCompleted = true,
                     completedAt = System.currentTimeMillis() - 7200000
                 )
@@ -217,8 +211,7 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     durationMin = 45,
                     priority = Priority.MEDIUM,
                     categoryId = "work",
-                    medium = "Online",
-                    reminderOffsetMin = 10
+                    reminderOffsets = "0,15"
                 )
             )
 
@@ -231,8 +224,7 @@ abstract class LifePlannerDatabase : RoomDatabase() {
                     durationMin = 60,
                     priority = Priority.LOW,
                     categoryId = "personal",
-                    medium = "In-Person",
-                    reminderOffsetMin = null
+                    reminderOffsets = "0,60"
                 )
             )
 

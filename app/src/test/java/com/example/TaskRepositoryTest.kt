@@ -86,4 +86,19 @@ class TaskRepositoryTest {
         val all = repository.allTasks.first()
         assertTrue(all.none { it.task.id == id })
     }
+
+    @Test
+    fun testMultipleNotificationTimings() = runBlocking {
+        val task = Task(
+            title = "Team Sprint Planning Event",
+            dueDate = "12-10-2026",
+            dueTime = "15:00",
+            reminderOffsets = "0,15,60"
+        )
+        val id = repository.insertTask(task)
+        val retrieved = repository.getTaskById(id).first()
+        assertNotNull(retrieved)
+        val offsets = retrieved!!.task.getReminderOffsetList()
+        assertEquals(listOf(0, 15, 60), offsets)
+    }
 }

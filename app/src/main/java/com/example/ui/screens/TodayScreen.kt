@@ -224,7 +224,7 @@ fun TodayScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "WHAT TO DO RIGHT NOW",
+                                    text = "Up Next",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary,
                                     letterSpacing = 0.8.sp
@@ -372,30 +372,7 @@ fun TodayScreen(
             }
         }
 
-        // 7. Routines Due Now
-        if (routines.isNotEmpty()) {
-            item {
-                Column {
-                    Text(
-                        text = "Routines",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                    routines.take(2).forEach { routineItem ->
-                        RoutineCard(
-                            routineWithSteps = routineItem,
-                            onRunRoutine = { viewModel.startRoutineRunner(routineItem) },
-                            onToggleStep = { stepId, done -> viewModel.markRoutineStepDone(stepId, done) },
-                            onDelete = { viewModel.deleteRoutine(routineItem.routine) },
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
-                }
-            }
-        }
-
-        // 8. To-Do Today (Untimed tasks)
+        // 7. To-Do Today (Untimed tasks) - ABOVE Routines
         item {
             Text(
                 text = "To-Do Today (${untimedTasks.size})",
@@ -431,7 +408,7 @@ fun TodayScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         OutlinedButton(
-                            onClick = { viewModel.openQuickAdd() }
+                            onClick = { viewModel.openCreateTask() }
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
@@ -450,6 +427,29 @@ fun TodayScreen(
                     onReschedule = { viewModel.taskToReschedule.value = item.task },
                     onDelete = { viewModel.deleteTask(item.task.id) }
                 )
+            }
+        }
+
+        // 8. Routines Due Now - BELOW To-Do list
+        if (routines.isNotEmpty()) {
+            item {
+                Column {
+                    Text(
+                        text = "Routines",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    routines.take(2).forEach { routineItem ->
+                        RoutineCard(
+                            routineWithSteps = routineItem,
+                            onRunRoutine = { viewModel.startRoutineRunner(routineItem) },
+                            onToggleStep = { stepId, done -> viewModel.markRoutineStepDone(stepId, done) },
+                            onDelete = { viewModel.deleteRoutine(routineItem.routine) },
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                }
             }
         }
 

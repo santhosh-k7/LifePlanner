@@ -35,13 +35,28 @@ data class Task(
     val durationMin: Int = 0, // e.g. 15, 30, 45, 60 min for time blocking
     val priority: Priority = Priority.MEDIUM,
     val categoryId: String = "personal", // "work", "personal", "health", "learning", "coding", "other"
-    val medium: String = "", // e.g. "Online", "In-Person", "Phone Call", "Meet / Zoom", "Desk Work", "Coding"
+    val medium: String = "", // Legacy field (removed from UI)
     val isCompleted: Boolean = false,
     val completedAt: Long? = null,
     val repeatRule: RepeatRule = RepeatRule.NONE,
-    val reminderOffsetMin: Int? = null, // e.g. 0 (at time), 10, 30, 60
+    val reminderOffsetMin: Int? = null, // Legacy single offset (e.g. 0, 10, 30)
+    val reminderOffsets: String = "", // Comma-separated offsets in minutes, e.g. "0,15" (at time of event + 15m before)
     val snoozedUntilDate: String? = null,
     val orderIndex: Int = 0,
     val focusMinutesSpent: Int = 0,
     val createdAt: Long = System.currentTimeMillis()
-)
+) {
+    /**
+     * Returns list of notification reminder minute offsets.
+     * 0 = at time of event, 15 = 15 minutes before, 60 = 1 hour before, etc.
+     */
+    fun getReminderOffsetList(): List<Int> {
+        if (reminderOffsets.isNotBlank()) {
+            return reminderOffsets.split(",")
+                .mapNotNull { it.trim().toIntOrNull() }
+                .distinct()
+                .sorted()
+        }
+        return reminderOffsetMin?.let { listOf(it) } ?: emptyList()
+    }
+}

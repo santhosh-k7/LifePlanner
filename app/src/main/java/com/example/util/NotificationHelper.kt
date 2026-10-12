@@ -52,7 +52,7 @@ object NotificationHelper {
         category: String,
         priority: Priority,
         dueTime: String?,
-        medium: String? = null
+        offsetMin: Int? = null
     ) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannels(context)
@@ -96,12 +96,24 @@ object NotificationHelper {
         )
 
         val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+        // Dynamic title based on timing
+        val notificationTitle = when {
+            offsetMin == 0 -> "🔔 Starting Now: $title"
+            offsetMin != null && offsetMin > 0 -> {
+                val timeLabel = when {
+                    offsetMin >= 1440 -> "${offsetMin / 1440} day(s) before"
+                    offsetMin >= 60 -> "${offsetMin / 60} hour(s) before"
+                    else -> "$offsetMin mins before"
+                }
+                "🔔 In $timeLabel: $title"
+            }
+            else -> "🔔 Task Reminder: $title"
+        }
+
         val contentText = buildString {
             if (!dueTime.isNullOrBlank()) {
                 append("Time: ${DateTimeUtils.formatTime12H(dueTime)} · ")
-            }
-            if (!medium.isNullOrBlank()) {
-                append("$medium · ")
             }
             append("#${category.replaceFirstChar { it.uppercase() }}")
             if (notes.isNotBlank()) {
@@ -111,7 +123,7 @@ object NotificationHelper {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_TASK_REMINDERS)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("🔔 $title")
+            .setContentTitle(notificationTitle)
             .setContentText(contentText)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -123,7 +135,8 @@ object NotificationHelper {
             .addAction(android.R.drawable.ic_popup_reminder, "Snooze 10m", snoozePendingIntent)
             .build()
 
-        notificationManager.notify(taskId.toInt(), notification)
+        val notificationId = (taskId * 1000 + ((offsetMin ?: 0).coerceAtLeast(0) % 999)).toInt()
+        notificationManager.notify(notificationId, notification)
     }
 
     fun cancelNotification(context: Context, taskId: Long) {
